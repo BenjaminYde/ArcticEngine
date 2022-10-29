@@ -8,7 +8,7 @@ project(arctic_engine LANGUAGES "CXX")
 add_executable(arctic_engine main.cpp)
 
 # function to find vulkan
-function(FindVulkan TARGET_NAME VKLIB_NAME)
+#[[function(FindVulkan TARGET_NAME VKLIB_NAME)
     # found SDK
     #message("Path VULKAN_SDK = $ENV{VULKAN_SDK}")
     set(VULKAN_SDK $ENV{VULKAN_SDK})
@@ -28,7 +28,14 @@ function(FindVulkan TARGET_NAME VKLIB_NAME)
 endfunction(FindVulkan TARGET_NAME VKLIBNAME)
 
 # find packages
-FindVulkan(arctic_engine "vulkan-1.lib")
+FindVulkan(arctic_engine "vulkan-1.lib")]]
+
+# find package: vulkan
+FetchContent_Declare(external_vulkan
+        GIT_REPOSITORY    https://github.com/KhronosGroup/Vulkan-Headers
+        GIT_TAG           v1.3.232)
+FetchContent_MakeAvailable(external_vulkan)
+target_link_libraries(arctic_engine PRIVATE Vulkan::Headers)
 
 # find package: glm
 FetchContent_Declare(external_glm
