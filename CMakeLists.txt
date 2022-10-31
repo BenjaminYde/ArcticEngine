@@ -6,9 +6,11 @@ include(FetchContent)
 set(CMAKE_CXX_STANDARD 20)
 project(arctic_engine LANGUAGES "CXX")
 
+#message("Compiler used is ${CMAKE_CXX_COMPILER_ID}")
+#message("Path to compiler is ${CMAKE_C_COMPILER}")
+
 #configure target
 add_executable(arctic_engine main.cpp)
-#target_compile_options (arctic_engine PRIVATE -fexceptions)
 
 # function to find vulkan
 function(FindVulkan TARGET_NAME VKLIB_NAME)
