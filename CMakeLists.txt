@@ -5,7 +5,10 @@ include(FetchContent)
 # configure project
 set(CMAKE_CXX_STANDARD 20)
 project(arctic_engine LANGUAGES "CXX")
+
+#configure target
 add_executable(arctic_engine main.cpp)
+#target_compile_options (arctic_engine PRIVATE -fexceptions)
 
 # function to find vulkan
 function(FindVulkan TARGET_NAME VKLIB_NAME)
@@ -13,13 +16,13 @@ function(FindVulkan TARGET_NAME VKLIB_NAME)
     #message("Path VULKAN_SDK = $ENV{VULKAN_SDK}")
     set(VULKAN_SDK $ENV{VULKAN_SDK})
     if (VULKAN_SDK)
-        message("found sdk")
+        message("found vulkan sdk")
         target_include_directories(${TARGET_NAME} PUBLIC ${VULKAN_SDK}/include)
         target_link_directories(${TARGET_NAME} PUBLIC ${VULKAN_SDK}/lib/)
         target_link_libraries(${TARGET_NAME} PUBLIC ${VKLIB_NAME})
     # not found SDK
     else()
-        message("not found sdk")
+        message("not found vulkan sdk")
         find_package(Vulkan REQUIRED)
         target_include_directories(${TARGET_NAME} PUBLIC ${Vulkan_INCLUDE_DIR})
         target_link_directories(${TARGET_NAME} PUBLIC ${Vulkan_LIBRARIES})

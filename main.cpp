@@ -1,44 +1,60 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/vec4.hpp>
-#include <glm/mat4x4.hpp>
+class HelloTriangleApplication
+{
+public:
+    void run()
+    {
+        initWindow();
+        initVulkan();
+        mainLoop();
+        cleanup();
+    }
 
-#include <iostream>
-//#include <format>
+private:
 
+    const uint32_t WINDOW_WIDTH = 1280;
+    const uint32_t WINDOW_HEIGHT = 720;
+    GLFWwindow* window = nullptr;
+
+    void initWindow()
+    {
+        // init glfw
+        glfwInit();
+
+        // set hints
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+        // create window
+        window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Vulkan", nullptr, nullptr);
+
+    }
+
+    void initVulkan()
+    {
+
+    }
+
+    void mainLoop()
+    {
+        while (!glfwWindowShouldClose(window))
+        {
+            glfwPollEvents();
+        }
+    }
+
+    void cleanup()
+    {
+        glfwDestroyWindow(window);
+        glfwTerminate();
+    }
+};
 
 int main()
 {
-    /*VkExtent2D windowExtend{ 1280 , 720 };
-    glm::vec3 vector = glm::vec3(0.5f, 0.5f, 0.5f);
-
-    std::cout << "Hello World!" << std::endl;
-    std::cout << std::format("vk window extend w: {} h: {}", windowExtend.width, windowExtend.height) << std::endl;
-    std::cout << std::format("glm vector length: {}", glm::length(vector)) << std::endl;*/
-
-    glfwInit();
-
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
-
-    uint32_t extensionCount = 0;
-    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-
-    std::cout << extensionCount << " extensions supported\n";
-
-    glm::mat4 matrix;
-    glm::vec4 vec;
-    auto test = matrix * vec;
-
-    while(!glfwWindowShouldClose(window)) {
-        glfwPollEvents();
-    }
-
-    glfwDestroyWindow(window);
-
-    glfwTerminate();
+    HelloTriangleApplication app;
+    app.run();
     return 0;
 }
