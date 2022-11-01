@@ -1,62 +1,32 @@
-# configure cmake
-cmake_minimum_required(VERSION 3.24)
+# configure cmake version
+cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
+
+# prevent in-source builds
+if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+    message(FATAL_ERROR "In-source builds are not recommended. Please choose an empty directory outside the source folder.")
+endif()
+
+# cmake include modules
 include(FetchContent)
+include(CMakePrintHelpers)
 
-# configure project
+# configure cmake
 set(CMAKE_CXX_STANDARD 20)
-project(arctic_engine LANGUAGES "CXX")
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-#message("Compiler used is ${CMAKE_CXX_COMPILER_ID}")
-#message("Path to compiler is ${CMAKE_C_COMPILER}")
+project(Arctic
+        LANGUAGES "CXX")
 
-#configure target
-add_executable(arctic_engine main.cpp)
+#cmake_print_variables(CMAKE_CXX_COMPILER_ID)
+#cmake_print_variables(CMAKE_CXX_COMPILER_VERSION)
+#cmake_print_variables(CMAKE_CXX_COMPILER)
 
-# function to find vulkan
-function(FindVulkan TARGET_NAME VKLIB_NAME)
-    # found SDK
-    #message("Path VULKAN_SDK = $ENV{VULKAN_SDK}")
-    set(VULKAN_SDK $ENV{VULKAN_SDK})
-    if (VULKAN_SDK)
-        message("found vulkan sdk")
-        target_include_directories(${TARGET_NAME} PUBLIC ${VULKAN_SDK}/include)
-        target_link_directories(${TARGET_NAME} PUBLIC ${VULKAN_SDK}/lib/)
-        target_link_libraries(${TARGET_NAME} PUBLIC ${VKLIB_NAME})
-    # not found SDK
-    else()
-        message("not found vulkan sdk")
-        find_package(Vulkan REQUIRED)
-        target_include_directories(${TARGET_NAME} PUBLIC ${Vulkan_INCLUDE_DIR})
-        target_link_directories(${TARGET_NAME} PUBLIC ${Vulkan_LIBRARIES})
-        target_link_libraries(${TARGET_NAME} PUBLIC ${VKLIB_NAME})
-    endif()
-endfunction(FindVulkan TARGET_NAME VKLIBNAME)
+# check compiler: force use clang (for the moment)
+if(NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    message(FATAL_ERROR "Project must be compiled using Clang! Current compiler is ${CMAKE_CXX_COMPILER_ID}")
+endif()
 
-# find package: vulkan
-FindVulkan(arctic_engine "vulkan-1.lib")
-
-# find package: vulkan
-#[[FetchContent_Declare(external_vulkan
-        GIT_REPOSITORY    https://github.com/KhronosGroup/Vulkan-Headers
-        GIT_TAG           v1.3.232)
-FetchContent_MakeAvailable(external_vulkan)
-target_link_libraries(arctic_engine PRIVATE Vulkan::Headers)]]
-
-# find package: glfw
-FetchContent_Declare(external_glfw
-        GIT_REPOSITORY    https://github.com/glfw/glfw
-        GIT_TAG           3.3.8)
-
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-
-FetchContent_MakeAvailable(external_glfw)
-target_link_libraries(arctic_engine PRIVATE glfw)
-
-# find package: glm
-FetchContent_Declare(external_glm
-        GIT_REPOSITORY    https://github.com/g-truc/glm
-        GIT_TAG           0.9.9.8)
-FetchContent_MakeAvailable(external_glm)
-target_link_libraries(arctic_engine PRIVATE glm::glm)
+# add sub directories
+add_subdirectory(external)
+add_subdirectory(src)
