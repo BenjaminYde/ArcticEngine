@@ -7,6 +7,15 @@ set(ARCTIC_ENGINE_VERSION_PATCH 0)
 set(TARGET ArcticEngine)
 add_executable(${TARGET} main.cpp)
 
+# check platform
+if(WIN32)
+    # we are in windows
+    target_compile_definitions(${TARGET} PUBLIC -DWIN32)
+else()
+    # throw error: no other OS supported
+    message(FATAL_ERROR "Project must be compiled on Windows!")
+endif()
+
 #target_compile_options(${TARGET} PUBLIC /EHs) # enable exceptions
 
 # link packages

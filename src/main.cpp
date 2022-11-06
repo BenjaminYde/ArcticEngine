@@ -1,7 +1,15 @@
+#ifdef WIN32
+    #define VK_USE_PLATFORM_WIN32_KHR
+#endif
 #define GLFW_INCLUDE_VULKAN
+#define GLFW_EXPOSE_NATIVE_WIN32
+
 #include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 #include <iostream>
 #include <vector>
+#include <optional>
+#include <set>
 
 class HelloTriangleApplication
 {
@@ -23,8 +31,13 @@ private:
 
     // vulkan
     VkInstance vkInstance = nullptr;
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkPhysicalDevice vkPhysicalDevice = VK_NULL_HANDLE;
+    VkDevice vkDevice = VK_NULL_HANDLE;
 
+    VkSurfaceKHR vkSurface;
+    VkQueue vkPresentQueue;
+
+    // .. debugging
     const bool enableValidationLayers = false;
 
     VkDebugUtilsMessengerEXT debugMessenger;
@@ -43,7 +56,6 @@ private:
 
         // create window
         window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Vulkan", nullptr, nullptr);
-
     }
 
     void vulkanInitialization()
@@ -58,7 +70,9 @@ private:
         // create instance
         vulkanCreateInstance();
         vulkanLoadDebugMessenger();
+        vulkanLoadSurface();
         vulkanLoadPhysicalDevice();
+        vulkanCreateLogicalDevice();
     }
 
     void mainLoop()
@@ -72,7 +86,9 @@ private:
     void cleanup()
     {
         // vulkan
+        vkDestroyDevice(vkDevice, nullptr);
         vulkanDestroyDebugMessenger();
+        vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
         vkDestroyInstance(vkInstance, nullptr);
 
         // glfw
@@ -158,6 +174,18 @@ private:
 
 #pragma region vulkan_physicaldevice
 
+    struct QueueFamilyIndices
+    {
+        std::optional<uint32_t> graphicsFamily;
+        std::optional<uint32_t> presentFamily;
+
+        bool IsComplete()
+        {
+            return  graphicsFamily.has_value() &&
+                    presentFamily.has_value();
+        }
+    };
+
     void vulkanLoadPhysicalDevice()
     {
         // get available physical devices
@@ -174,39 +202,48 @@ private:
         vkEnumeratePhysicalDevices(vkInstance, &deviceCount, devices.data());
 
         // find suitable device
-        physicalDevice = VK_NULL_HANDLE;
+        // todo: idea: could add score implementation (more features = better score), select device with highest score
+        vkPhysicalDevice = VK_NULL_HANDLE;
+
+        VkPhysicalDeviceProperties deviceProperties;
+        VkPhysicalDeviceFeatures deviceFeatures;
+        QueueFamilyIndices queueFamilyIndices;
+
         for(auto & device : devices)
         {
-            if(isVkDeviceSuitable(device))
+            // get data of device
+            vkGetPhysicalDeviceProperties(device, &deviceProperties);
+            vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+            queueFamilyIndices = findQueueFamilies(device);
+
+            // break loop when found suitable device
+            if(isVkDeviceSuitable(device, deviceProperties, deviceFeatures, queueFamilyIndices))
             {
-                physicalDevice = device;
+                vkPhysicalDevice = device;
                 break;
             }
         }
 
-        if(physicalDevice == VK_NULL_HANDLE)
+        // final check if device is valid
+        if(vkPhysicalDevice == VK_NULL_HANDLE)
         {
             std::cout << "error: vulkan: did not find suitable physical device!";
             return;
         }
-
-        // todo: idea: could add score implementation (more features = better score), select device with highest score
     }
 
-    bool isVkDeviceSuitable(const VkPhysicalDevice & device)
+    bool isVkDeviceSuitable(
+            const VkPhysicalDevice & device,
+            VkPhysicalDeviceProperties deviceProperties,
+            VkPhysicalDeviceFeatures deviceFeatures,
+            QueueFamilyIndices queueFamilyIndices)
     {
-        VkPhysicalDeviceProperties deviceProperties;
-        vkGetPhysicalDeviceProperties(device, &deviceProperties);
-        VkPhysicalDeviceFeatures deviceFeatures;
-        vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-        bool queueFamiliesSuitable = areQueueFamiliesSuitable(device);
-
         return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
                deviceFeatures.geometryShader &&
-                queueFamiliesSuitable;
+                queueFamilyIndices.IsComplete();
     }
 
-    bool areQueueFamiliesSuitable(const VkPhysicalDevice & device)
+    QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice & device)
     {
         // get queue families
         uint32_t queueFamilyCount = 0;
@@ -216,16 +253,68 @@ private:
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
         // find suitable families
-        uint32_t validFamilies = 0;
+        QueueFamilyIndices queueFamilyIndices{};
+        uint32_t familyIndex = 0;
         for(const auto& queueFamily : queueFamilies)
         {
-            // increase counter when suitable
+            // set graphics family
             if(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-                ++validFamilies;
+                queueFamilyIndices.graphicsFamily = familyIndex;
+
+            // set present family
+            VkBool32 isPresentSupport = false;
+            vkGetPhysicalDeviceSurfaceSupportKHR(device, familyIndex, vkSurface, &isPresentSupport);
+            if(isPresentSupport)
+                queueFamilyIndices.presentFamily = familyIndex;
+
+            ++familyIndex;
         }
-        return validFamilies > 0;
+        return queueFamilyIndices;
     }
 #pragma endregion vulkan_physicaldevice
+
+    void vulkanCreateLogicalDevice()
+    {
+        // create device queue infos
+        // >> create set of queue families (re-use queue families instead of creating duplicates)
+        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+
+        QueueFamilyIndices indices = findQueueFamilies(vkPhysicalDevice);
+        std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+
+        float queuePriority = 1.0f;
+        for(uint32_t queueFamily : uniqueQueueFamilies)
+        {
+            // create device queue create info
+            VkDeviceQueueCreateInfo queueCreateInfo{};
+            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queueCreateInfo.queueFamilyIndex = queueFamily;
+            queueCreateInfo.queueCount = 1;
+            queueCreateInfo.pQueuePriorities = &queuePriority;
+
+            // add create info
+            queueCreateInfos.push_back(queueCreateInfo);
+        }
+
+        // create device features
+        // >> currently empty
+        VkPhysicalDeviceFeatures deviceFeatures{};
+
+        // create device info
+        VkDeviceCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+        createInfo.pQueueCreateInfos = queueCreateInfos.data();
+        createInfo.pEnabledFeatures = &deviceFeatures;
+
+        // create device
+        VkResult result = vkCreateDevice(vkPhysicalDevice, &createInfo, nullptr, &vkDevice);
+        if(result != VK_SUCCESS)
+        {
+            std::cout << "error: vulkan: failed to create logical device!";
+            return;
+        }
+    }
 
 #pragma region vulkan_validation
 
@@ -333,6 +422,29 @@ private:
 
 #pragma endregion vulkan_validation
 
+    void vulkanLoadSurface()
+    {
+        // create native surface
+        VkWin32SurfaceCreateInfoKHR createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+        createInfo.hwnd = glfwGetWin32Window(window);
+        createInfo.hinstance = GetModuleHandle(nullptr);
+
+        VkResult resultWindows = vkCreateWin32SurfaceKHR(vkInstance, &createInfo, nullptr, &vkSurface);
+        if(resultWindows != VK_SUCCESS)
+        {
+            std::cout << "error: vulkan: failed to create window 32 surface!";
+            return;
+        }
+
+        // create glfw surface from native surface
+        VkResult resultGlfw = glfwCreateWindowSurface(vkInstance, window, nullptr, &vkSurface);
+        if(resultGlfw != VK_SUCCESS)
+        {
+            std::cout << "error: vulkan: failed to create glfw window surface!";
+            return;
+        }
+    }
 };
 
 int main()
