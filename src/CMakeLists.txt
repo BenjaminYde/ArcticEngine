@@ -7,6 +7,8 @@ set(ARCTIC_ENGINE_VERSION_PATCH 0)
 set(TARGET ArcticEngine)
 add_executable(${TARGET} main.cpp)
 
+#target_compile_options(${TARGET} PUBLIC /EHs) # enable exceptions
+
 # link packages
 FindPackage_Vulkan(${TARGET})
 FindPackage_GLFW(  ${TARGET})

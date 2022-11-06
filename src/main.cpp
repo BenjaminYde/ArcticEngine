@@ -23,6 +23,7 @@ private:
 
     // vulkan
     VkInstance vkInstance = nullptr;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 
     const bool enableValidationLayers = false;
 
@@ -56,7 +57,8 @@ private:
 
         // create instance
         vulkanCreateInstance();
-        vulkanSetupDebugMessenger();
+        vulkanLoadDebugMessenger();
+        vulkanLoadPhysicalDevice();
     }
 
     void mainLoop()
@@ -154,7 +156,80 @@ private:
         return extensions;
     }
 
-    void vulkanSetupDebugMessenger()
+#pragma region vulkan_physicaldevice
+
+    void vulkanLoadPhysicalDevice()
+    {
+        // get available physical devices
+        uint32_t deviceCount = 0;
+        vkEnumeratePhysicalDevices(vkInstance, &deviceCount, nullptr);
+
+        if(deviceCount == 0)
+        {
+            std::cout << "error: vulkan: did not find physical device!";
+            return;
+        }
+
+        std::vector<VkPhysicalDevice> devices(deviceCount);
+        vkEnumeratePhysicalDevices(vkInstance, &deviceCount, devices.data());
+
+        // find suitable device
+        physicalDevice = VK_NULL_HANDLE;
+        for(auto & device : devices)
+        {
+            if(isVkDeviceSuitable(device))
+            {
+                physicalDevice = device;
+                break;
+            }
+        }
+
+        if(physicalDevice == VK_NULL_HANDLE)
+        {
+            std::cout << "error: vulkan: did not find suitable physical device!";
+            return;
+        }
+
+        // todo: idea: could add score implementation (more features = better score), select device with highest score
+    }
+
+    bool isVkDeviceSuitable(const VkPhysicalDevice & device)
+    {
+        VkPhysicalDeviceProperties deviceProperties;
+        vkGetPhysicalDeviceProperties(device, &deviceProperties);
+        VkPhysicalDeviceFeatures deviceFeatures;
+        vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+        bool queueFamiliesSuitable = areQueueFamiliesSuitable(device);
+
+        return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
+               deviceFeatures.geometryShader &&
+                queueFamiliesSuitable;
+    }
+
+    bool areQueueFamiliesSuitable(const VkPhysicalDevice & device)
+    {
+        // get queue families
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+        // find suitable families
+        uint32_t validFamilies = 0;
+        for(const auto& queueFamily : queueFamilies)
+        {
+            // increase counter when suitable
+            if(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+                ++validFamilies;
+        }
+        return validFamilies > 0;
+    }
+#pragma endregion vulkan_physicaldevice
+
+#pragma region vulkan_validation
+
+    void vulkanLoadDebugMessenger()
     {
         // return when no validation layers
         if (!enableValidationLayers)
@@ -255,6 +330,9 @@ private:
         std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
         return VK_FALSE;
     }
+
+#pragma endregion vulkan_validation
+
 };
 
 int main()
