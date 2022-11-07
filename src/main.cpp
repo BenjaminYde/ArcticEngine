@@ -37,6 +37,10 @@ private:
     VkSurfaceKHR vkSurface;
     VkQueue vkPresentQueue;
 
+    const std::vector<const char*> requiredDeviceExtensions = {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
+
     // .. debugging
     const bool enableValidationLayers = false;
 
@@ -172,7 +176,7 @@ private:
         return extensions;
     }
 
-#pragma region vulkan_physicaldevice
+#pragma region vulkan_devices
 
     struct QueueFamilyIndices
     {
@@ -232,47 +236,6 @@ private:
         }
     }
 
-    bool isVkDeviceSuitable(
-            const VkPhysicalDevice & device,
-            VkPhysicalDeviceProperties deviceProperties,
-            VkPhysicalDeviceFeatures deviceFeatures,
-            QueueFamilyIndices queueFamilyIndices)
-    {
-        return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-               deviceFeatures.geometryShader &&
-                queueFamilyIndices.IsComplete();
-    }
-
-    QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice & device)
-    {
-        // get queue families
-        uint32_t queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-        // find suitable families
-        QueueFamilyIndices queueFamilyIndices{};
-        uint32_t familyIndex = 0;
-        for(const auto& queueFamily : queueFamilies)
-        {
-            // set graphics family
-            if(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-                queueFamilyIndices.graphicsFamily = familyIndex;
-
-            // set present family
-            VkBool32 isPresentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, familyIndex, vkSurface, &isPresentSupport);
-            if(isPresentSupport)
-                queueFamilyIndices.presentFamily = familyIndex;
-
-            ++familyIndex;
-        }
-        return queueFamilyIndices;
-    }
-#pragma endregion vulkan_physicaldevice
-
     void vulkanCreateLogicalDevice()
     {
         // create device queue infos
@@ -306,6 +269,8 @@ private:
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
         createInfo.pQueueCreateInfos = queueCreateInfos.data();
         createInfo.pEnabledFeatures = &deviceFeatures;
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredDeviceExtensions.size());
+        createInfo.ppEnabledExtensionNames = requiredDeviceExtensions.data();
 
         // create device
         VkResult result = vkCreateDevice(vkPhysicalDevice, &createInfo, nullptr, &vkDevice);
@@ -315,6 +280,69 @@ private:
             return;
         }
     }
+
+    bool isVkDeviceSuitable(
+            const VkPhysicalDevice & device,
+            VkPhysicalDeviceProperties deviceProperties,
+            VkPhysicalDeviceFeatures deviceFeatures,
+            QueueFamilyIndices queueFamilyIndices)
+    {
+        return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
+               deviceFeatures.geometryShader &&
+                queueFamilyIndices.IsComplete() &&
+                hasDeviceExtensions(device);
+    }
+
+    QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice & device)
+    {
+        // get queue families
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+        // find suitable families
+        QueueFamilyIndices queueFamilyIndices{};
+        uint32_t familyIndex = 0;
+        for(const auto& queueFamily : queueFamilies)
+        {
+            // set graphics family
+            if(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+                queueFamilyIndices.graphicsFamily = familyIndex;
+
+            // set present family
+            VkBool32 isPresentSupport = false;
+            vkGetPhysicalDeviceSurfaceSupportKHR(device, familyIndex, vkSurface, &isPresentSupport);
+            if(isPresentSupport)
+                queueFamilyIndices.presentFamily = familyIndex;
+
+            ++familyIndex;
+        }
+        return queueFamilyIndices;
+    }
+
+    bool hasDeviceExtensions(const VkPhysicalDevice & device)
+    {
+        // get available device extensions
+        uint32_t extensionCount;
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+        if(extensionCount == 0)
+            return false;
+
+        std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+        // check if available extensions met requirements
+        std::set<std::string> requiredExtensions(requiredDeviceExtensions.begin(), requiredDeviceExtensions.end());
+        for(const auto & extension : availableExtensions)
+            requiredExtensions.erase(extension.extensionName);
+
+        return requiredExtensions.empty();
+    }
+
+#pragma endregion vulkan_devices
 
 #pragma region vulkan_validation
 
