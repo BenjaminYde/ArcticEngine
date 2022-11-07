@@ -23,8 +23,12 @@ project(Arctic
 #cmake_print_variables(CMAKE_CXX_COMPILER)
 
 # check compiler: force use clang (for the moment)
-if(NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    message(FATAL_ERROR "Project must be compiled using Clang! Current compiler is ${CMAKE_CXX_COMPILER_ID}")
+if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    if(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 14.0.5)
+        message(FATAL_ERROR "Clang compiler version is smaller then 14.0.5! Current compiler version is ${CMAKE_CXX_COMPILER_VERSION}")
+    endif()
+else()
+        message(FATAL_ERROR "Project must be compiled using preset! Current compiler is ${CMAKE_CXX_COMPILER_ID}")
 endif()
 
 # add sub directories
