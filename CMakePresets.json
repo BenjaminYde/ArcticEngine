@@ -1,0 +1,35 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 23,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "windows-clang-cl-debug",
+      "displayName": "clang-cl-debug x64",
+      "description": "Clang 14.0.5 (MSVC CLI) for MSVC 17.3.32929.385 (Visual Studio Community 2022 Release - amd64)",
+      "generator": "Ninja",
+      "toolset": "ClangCL",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+        "CMAKE_C_COMPILER": "clang-cl.exe",
+        "CMAKE_CXX_COMPILER": "clang-cl.exe"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "windows-clang-cl-debug",
+      "displayName": "clang-cl-debug x64",
+      "configurePreset": "windows-clang-cl-debug",
+      "configuration": "Debug"
+    }
+  ]
+}
