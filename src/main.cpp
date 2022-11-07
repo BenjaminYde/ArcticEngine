@@ -190,6 +190,13 @@ private:
         }
     };
 
+    struct SwapChainDetails
+    {
+        VkSurfaceCapabilitiesKHR capabilities; // image width/height, min/max images, ...
+        std::vector<VkSurfaceFormatKHR> surfaceFormats; // pixel format, color space, ...
+        std::vector<VkPresentModeKHR> presentModes; // FIFO, Mailbox, ...
+    };
+
     void vulkanLoadPhysicalDevice()
     {
         // get available physical devices
@@ -287,10 +294,31 @@ private:
             VkPhysicalDeviceFeatures deviceFeatures,
             QueueFamilyIndices queueFamilyIndices)
     {
-        return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-               deviceFeatures.geometryShader &&
-                queueFamilyIndices.IsComplete() &&
-                hasDeviceExtensions(device);
+        // check device properties
+        if(deviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+            return false;
+
+        // check device features
+        if(!deviceFeatures.geometryShader)
+            return false;
+
+        // check if queue families are complete
+        if(!queueFamilyIndices.IsComplete())
+            return false;
+
+        // try find device extensions
+        bool foundDeviceExtensions = findRequiredDeviceExtensions(device);
+        if(!foundDeviceExtensions)
+            return false;
+
+        // check if swap chain is valid
+        // >> see device & surface
+        SwapChainDetails swapChainDetails = findSwapChainDetails(device);
+        bool isSwapChainValid = !swapChainDetails.surfaceFormats.empty() && !swapChainDetails.presentModes.empty();
+        if(!isSwapChainValid)
+            return false;
+
+        return true;
     }
 
     QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice & device)
@@ -322,7 +350,35 @@ private:
         return queueFamilyIndices;
     }
 
-    bool hasDeviceExtensions(const VkPhysicalDevice & device)
+    SwapChainDetails findSwapChainDetails(const VkPhysicalDevice & device)
+    {
+        SwapChainDetails details;
+
+        // get capabilities
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, vkSurface, &details.capabilities);
+
+        // get surface formats
+        uint32_t formatCount;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, vkSurface, &formatCount, nullptr);
+        if (formatCount != 0)
+        {
+            details.surfaceFormats.resize(formatCount);
+            vkGetPhysicalDeviceSurfaceFormatsKHR(device, vkSurface, &formatCount, details.surfaceFormats.data());
+        }
+
+        // get present modes
+        uint32_t presentModeCount;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, vkSurface, &presentModeCount, nullptr);
+        if (presentModeCount != 0)
+        {
+            details.presentModes.resize(presentModeCount);
+            vkGetPhysicalDeviceSurfacePresentModesKHR(device, vkSurface, &presentModeCount, details.presentModes.data());
+        }
+
+        return details;
+    }
+
+    bool findRequiredDeviceExtensions(const VkPhysicalDevice & device)
     {
         // get available device extensions
         uint32_t extensionCount;
