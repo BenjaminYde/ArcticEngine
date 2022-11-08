@@ -10,6 +10,8 @@
 #include <vector>
 #include <optional>
 #include <set>
+#include <limits>
+#include <algorithm>
 
 class HelloTriangleApplication
 {
@@ -35,7 +37,8 @@ private:
     VkDevice vkDevice = VK_NULL_HANDLE;
 
     VkSurfaceKHR vkSurface;
-    VkQueue vkPresentQueue;
+    VkSwapchainKHR vkSwapChain;
+
 
     const std::vector<const char*> requiredDeviceExtensions = {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -77,6 +80,7 @@ private:
         vulkanLoadSurface();
         vulkanLoadPhysicalDevice();
         vulkanCreateLogicalDevice();
+        vulkanCreateSwapChain();
     }
 
     void mainLoop()
@@ -90,6 +94,7 @@ private:
     void cleanup()
     {
         // vulkan
+        vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
         vkDestroyDevice(vkDevice, nullptr);
         vulkanDestroyDebugMessenger();
         vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
@@ -190,7 +195,7 @@ private:
         }
     };
 
-    struct SwapChainDetails
+    struct SwapChainDeviceSupport
     {
         VkSurfaceCapabilitiesKHR capabilities; // image width/height, min/max images, ...
         std::vector<VkSurfaceFormatKHR> surfaceFormats; // pixel format, color space, ...
@@ -313,8 +318,8 @@ private:
 
         // check if swap chain is valid
         // >> see device & surface
-        SwapChainDetails swapChainDetails = findSwapChainDetails(device);
-        bool isSwapChainValid = !swapChainDetails.surfaceFormats.empty() && !swapChainDetails.presentModes.empty();
+        SwapChainDeviceSupport swapChainSupport = querySwapChainSupport(device);
+        bool isSwapChainValid = !swapChainSupport.surfaceFormats.empty() && !swapChainSupport.presentModes.empty();
         if(!isSwapChainValid)
             return false;
 
@@ -350,9 +355,97 @@ private:
         return queueFamilyIndices;
     }
 
-    SwapChainDetails findSwapChainDetails(const VkPhysicalDevice & device)
+    bool findRequiredDeviceExtensions(const VkPhysicalDevice & device)
     {
-        SwapChainDetails details;
+        // get available device extensions
+        uint32_t extensionCount;
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+        if(extensionCount == 0)
+            return false;
+
+        std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+        // check if available extensions met requirements
+        std::set<std::string> requiredExtensions(requiredDeviceExtensions.begin(), requiredDeviceExtensions.end());
+        for(const auto & extension : availableExtensions)
+            requiredExtensions.erase(extension.extensionName);
+
+        return requiredExtensions.empty();
+    }
+
+#pragma endregion vulkan_devices
+
+#pragma region vulkan_presentation
+
+    void vulkanCreateSwapChain()
+    {
+        // query device support
+        SwapChainDeviceSupport swapChainSupport = querySwapChainSupport(vkPhysicalDevice);
+
+        // select best settings from query
+        VkSurfaceFormatKHR surfaceFormat = selectSwapChainSurfaceFormat(swapChainSupport.surfaceFormats);
+        VkPresentModeKHR presentMode = selectSwapChainPresentMode(swapChainSupport.presentModes);
+        VkExtent2D extent = selectSwapChainExtent(swapChainSupport.capabilities);
+
+        uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1; // make sure to have al least 2 images
+        imageCount = std::clamp(imageCount, static_cast<uint32_t>(1), swapChainSupport.capabilities.maxImageCount);
+
+        // create swap chain info
+        // .. default data
+        VkSwapchainCreateInfoKHR createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        createInfo.surface = vkSurface;
+
+        // .. image data
+        createInfo.minImageCount = imageCount;
+        createInfo.imageFormat = surfaceFormat.format;
+        createInfo.imageColorSpace = surfaceFormat.colorSpace;
+        createInfo.imageExtent = extent;
+
+        createInfo.imageArrayLayers = 1;
+        createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; // specified operation usage: no special usage (just render directly), no-post-processing...
+
+        // .. queue family data
+        QueueFamilyIndices indices = findQueueFamilies(vkPhysicalDevice);
+        uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+
+        bool isQueueFamilyShared = indices.graphicsFamily == indices.presentFamily;
+        if(isQueueFamilyShared)
+        {
+            createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            createInfo.queueFamilyIndexCount = 0; // Optional
+            createInfo.pQueueFamilyIndices = nullptr; // Optional
+        }
+        else
+        {
+            createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT; // avoid extra ownership code
+            createInfo.queueFamilyIndexCount = 2;
+            createInfo.pQueueFamilyIndices = queueFamilyIndices;
+        }
+
+        // .. other data
+        createInfo.preTransform = swapChainSupport.capabilities.currentTransform; // avoid special transform by setting default
+        createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR; // ignore window blending
+
+        createInfo.presentMode = presentMode;
+        createInfo.clipped = VK_TRUE;
+
+        createInfo.oldSwapchain = VK_NULL_HANDLE;
+
+        // create swap chain
+        VkResult result = vkCreateSwapchainKHR(vkDevice, &createInfo, nullptr, &vkSwapChain);
+        if (result != VK_SUCCESS)
+        {
+            std::cout << "error: vulkan: failed to create swap chain!";
+            return;
+        }
+    }
+
+    SwapChainDeviceSupport querySwapChainSupport(const VkPhysicalDevice & device)
+    {
+        SwapChainDeviceSupport details;
 
         // get capabilities
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, vkSurface, &details.capabilities);
@@ -378,27 +471,48 @@ private:
         return details;
     }
 
-    bool findRequiredDeviceExtensions(const VkPhysicalDevice & device)
+    VkSurfaceFormatKHR selectSwapChainSurfaceFormat(const std::vector<VkSurfaceFormatKHR> & availableFormats)
     {
-        // get available device extensions
-        uint32_t extensionCount;
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+        // loop over available formats
+        for (const auto& availableFormat : availableFormats)
+        {
+            // return format when met requirements
+            if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
+                availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+                return availableFormat;
+        }
 
-        if(extensionCount == 0)
-            return false;
-
-        std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
-
-        // check if available extensions met requirements
-        std::set<std::string> requiredExtensions(requiredDeviceExtensions.begin(), requiredDeviceExtensions.end());
-        for(const auto & extension : availableExtensions)
-            requiredExtensions.erase(extension.extensionName);
-
-        return requiredExtensions.empty();
+        // return first format if none found
+        return availableFormats[0];
     }
 
-#pragma endregion vulkan_devices
+    VkPresentModeKHR selectSwapChainPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+    {
+        // loop over available modes
+        for (const auto& availablePresentMode : availablePresentModes)
+        {
+            // return mode when met requirements
+            if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+                return availablePresentMode;
+        }
+        return VK_PRESENT_MODE_FIFO_KHR;
+    }
+
+    VkExtent2D selectSwapChainExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+    {
+        // get window size
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+
+        // create vulkan extent
+        VkExtent2D extent = {};
+        extent.width = std::clamp(static_cast<uint32_t>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+        extent.height = std::clamp(static_cast<uint32_t>(height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+
+        return extent;
+    }
+
+#pragma endregion vulkan_presentation
 
 #pragma region vulkan_validation
 

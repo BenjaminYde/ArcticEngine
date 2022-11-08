@@ -11,6 +11,12 @@ add_executable(${TARGET} main.cpp)
 if(WIN32)
     # we are in windows
     target_compile_definitions(${TARGET} PUBLIC -DWIN32)
+
+    # disable min max macro in windows headers
+    # https://stackoverflow.com/questions/27442885/syntax-error-with-stdnumeric-limitsmax
+    target_compile_definitions(${TARGET} PUBLIC -DNOMINMAX )
+
+
 else()
     # throw error: no other OS supported
     message(FATAL_ERROR "Project must be compiled on Windows!")
