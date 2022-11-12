@@ -11,4 +11,6 @@ function(FindPackage_GLFW TARGET_NAME)
     FetchContent_MakeAvailable(external_glfw)
 
     target_link_libraries(${TARGET_NAME} PRIVATE glfw)
+    target_include_directories(${TARGET_NAME} PRIVATE ${external_glfw_SOURCE_DIR}/include)
+
 endfunction()

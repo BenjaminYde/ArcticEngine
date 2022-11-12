@@ -22,6 +22,12 @@ project(Arctic
 #cmake_print_variables(CMAKE_CXX_COMPILER_VERSION)
 #cmake_print_variables(CMAKE_CXX_COMPILER)
 
+# check platform
+if(NOT WIN32)
+    # throw error: no other OS supported
+    message(FATAL_ERROR "Project must be compiled on Windows!")
+endif()
+
 # check compiler: force use clang (for the moment)
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     if(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 14.0.5)
