@@ -1,6 +1,8 @@
 //
-// Created by Benjamin on 11/11/2022.
+// Created by Benjamin on 14/11/2022.
 //
+
+#include "vulkan_loader.h"
 
 #ifdef WIN32
 #define VK_USE_PLATFORM_WIN32_KHR
@@ -8,76 +10,13 @@
 #define GLFW_INCLUDE_VULKAN
 #define GLFW_EXPOSE_NATIVE_WIN32
 
-#include "arctic_engine.h"
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
-#include <iostream>
-#include <vector>
-#include <optional>
-#include <set>
-#include <limits>
 #include <algorithm>
+#include <limits>
+#include <iostream>
 
-void ArcticEngine::initWindow()
-{
-    // init glfw
-    glfwInit();
-
-    // set hints
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
-    // create window
-    window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Vulkan", nullptr, nullptr);
-}
-
-void ArcticEngine::vulkanInitialization()
-{
-    // check validation layers
-    if(enableValidationLayers && !vulkanFoundValidationLayers())
-    {
-        std::cout << "error: vulkan: validation layers requested, but not available!";
-        return;
-    }
-
-    // create instance
-    vulkanCreateInstance();
-    vulkanLoadDebugMessenger();
-    vulkanLoadSurface();
-    vulkanLoadPhysicalDevice();
-    vulkanCreateLogicalDevice();
-    vulkanCreateSwapChain();
-    vulkanCreateImageViews();
-    vulkanCreatePipeline();
-}
-
-void ArcticEngine::mainLoop()
-{
-    while (!glfwWindowShouldClose(window))
-    {
-        glfwPollEvents();
-    }
-}
-
-void ArcticEngine::cleanup()
-{
-    // vulkan
-    for(auto & imageView : swapChainImageViews)
-    {
-        vkDestroyImageView(vkDevice, imageView, nullptr);
-    }
-    vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
-    vkDestroyDevice(vkDevice, nullptr);
-    vulkanDestroyDebugMessenger();
-    vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
-    vkDestroyInstance(vkInstance, nullptr);
-
-    // glfw
-    glfwDestroyWindow(window);
-    glfwTerminate();
-}
-
-void ArcticEngine::vulkanCreateInstance()
+void VulkanLoader::vulkanCreateInstance()
 {
     // create app info
     VkApplicationInfo appInfo{};
@@ -121,7 +60,7 @@ void ArcticEngine::vulkanCreateInstance()
     }
 }
 
-std::vector<const char*> ArcticEngine::vulkanGetRequiredExtensions()
+std::vector<const char*> VulkanLoader::vulkanGetRequiredExtensions()
 {
     // create empty extensions
     std::vector<const char*> extensions;
@@ -155,7 +94,7 @@ std::vector<const char*> ArcticEngine::vulkanGetRequiredExtensions()
 
 #pragma region vulkan_devices
 
-void ArcticEngine::vulkanLoadPhysicalDevice()
+void VulkanLoader::vulkanLoadPhysicalDevice()
 {
     // get available physical devices
     uint32_t deviceCount = 0;
@@ -201,7 +140,7 @@ void ArcticEngine::vulkanLoadPhysicalDevice()
     }
 }
 
-void ArcticEngine::vulkanCreateLogicalDevice()
+void VulkanLoader::vulkanCreateLogicalDevice()
 {
     // create device queue infos
     // >> create set of queue families (re-use queue families instead of creating duplicates)
@@ -246,7 +185,7 @@ void ArcticEngine::vulkanCreateLogicalDevice()
     }
 }
 
-bool ArcticEngine::isVkDeviceSuitable(
+bool VulkanLoader::isVkDeviceSuitable(
         const VkPhysicalDevice & device,
         VkPhysicalDeviceProperties deviceProperties,
         VkPhysicalDeviceFeatures deviceFeatures,
@@ -279,7 +218,7 @@ bool ArcticEngine::isVkDeviceSuitable(
     return true;
 }
 
-ArcticEngine::QueueFamilyIndices ArcticEngine::findQueueFamilies(const VkPhysicalDevice & device)
+VulkanLoader::QueueFamilyIndices VulkanLoader::findQueueFamilies(const VkPhysicalDevice & device)
 {
     // get queue families
     uint32_t queueFamilyCount = 0;
@@ -308,7 +247,7 @@ ArcticEngine::QueueFamilyIndices ArcticEngine::findQueueFamilies(const VkPhysica
     return queueFamilyIndices;
 }
 
-bool ArcticEngine::findRequiredDeviceExtensions(const VkPhysicalDevice & device)
+bool VulkanLoader::findRequiredDeviceExtensions(const VkPhysicalDevice & device)
 {
     // get available device extensions
     uint32_t extensionCount;
@@ -332,7 +271,7 @@ bool ArcticEngine::findRequiredDeviceExtensions(const VkPhysicalDevice & device)
 
 #pragma region vulkan_presentation
 
-void ArcticEngine::vulkanCreateSwapChain()
+void VulkanLoader::vulkanCreateSwapChain()
 {
     // query device support
     SwapChainDeviceSupport swapChainSupport = querySwapChainSupport(vkPhysicalDevice);
@@ -405,7 +344,7 @@ void ArcticEngine::vulkanCreateSwapChain()
     vkGetSwapchainImagesKHR(vkDevice, vkSwapChain, &imageCount, swapChainImages.data());
 }
 
-void ArcticEngine::vulkanCreateImageViews()
+void VulkanLoader::vulkanCreateImageViews()
 {
     // resize views from created images
     swapChainImageViews.resize(swapChainImages.size());
@@ -442,7 +381,7 @@ void ArcticEngine::vulkanCreateImageViews()
     }
 }
 
-ArcticEngine::SwapChainDeviceSupport ArcticEngine::querySwapChainSupport(const VkPhysicalDevice & device)
+VulkanLoader::SwapChainDeviceSupport VulkanLoader::querySwapChainSupport(const VkPhysicalDevice & device)
 {
     SwapChainDeviceSupport details;
 
@@ -470,7 +409,7 @@ ArcticEngine::SwapChainDeviceSupport ArcticEngine::querySwapChainSupport(const V
     return details;
 }
 
-VkSurfaceFormatKHR ArcticEngine::selectSwapChainSurfaceFormat(const std::vector<VkSurfaceFormatKHR> & availableFormats)
+VkSurfaceFormatKHR VulkanLoader::selectSwapChainSurfaceFormat(const std::vector<VkSurfaceFormatKHR> & availableFormats)
 {
     // loop over available formats
     for (const auto& availableFormat : availableFormats)
@@ -485,7 +424,7 @@ VkSurfaceFormatKHR ArcticEngine::selectSwapChainSurfaceFormat(const std::vector<
     return availableFormats[0];
 }
 
-VkPresentModeKHR ArcticEngine::selectSwapChainPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+VkPresentModeKHR VulkanLoader::selectSwapChainPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 {
     // loop over available modes
     for (const auto& availablePresentMode : availablePresentModes)
@@ -497,7 +436,7 @@ VkPresentModeKHR ArcticEngine::selectSwapChainPresentMode(const std::vector<VkPr
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D ArcticEngine::selectSwapChainExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+VkExtent2D VulkanLoader::selectSwapChainExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 {
     // get window size
     int width, height;
@@ -515,7 +454,7 @@ VkExtent2D ArcticEngine::selectSwapChainExtent(const VkSurfaceCapabilitiesKHR& c
 
 #pragma region vulkan_pipeline
 
-void ArcticEngine::vulkanCreatePipeline()
+void VulkanLoader::vulkanCreatePipeline()
 {
 
 }
@@ -524,7 +463,7 @@ void ArcticEngine::vulkanCreatePipeline()
 
 #pragma region vulkan_validation
 
-void ArcticEngine::vulkanLoadDebugMessenger()
+void VulkanLoader::vulkanLoadDebugMessenger()
 {
     // return when no validation layers
     if (!enableValidationLayers)
@@ -543,13 +482,13 @@ void ArcticEngine::vulkanLoadDebugMessenger()
     }
 }
 
-void ArcticEngine::vulkanDestroyDebugMessenger()
+void VulkanLoader::vulkanDestroyDebugMessenger()
 {
     if (enableValidationLayers)
         vulkanDestroyDebugUtilsMessengerEXT(vkInstance, debugMessenger, nullptr);
 }
 
-bool ArcticEngine::vulkanFoundValidationLayers()
+bool VulkanLoader::vulkanFoundValidationLayers()
 {
     // get available layers
     uint32_t layerCount;
@@ -578,7 +517,7 @@ bool ArcticEngine::vulkanFoundValidationLayers()
     return true;
 }
 
-VkResult ArcticEngine::vulkanCreateDebugUtilsMessengerEXT(
+VkResult VulkanLoader::vulkanCreateDebugUtilsMessengerEXT(
         VkInstance instance,
         const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
         const VkAllocationCallbacks* pAllocator,
@@ -591,7 +530,7 @@ VkResult ArcticEngine::vulkanCreateDebugUtilsMessengerEXT(
         return VK_ERROR_EXTENSION_NOT_PRESENT;
 }
 
-void ArcticEngine::vulkanDestroyDebugUtilsMessengerEXT(
+void VulkanLoader::vulkanDestroyDebugUtilsMessengerEXT(
         VkInstance instance,
         VkDebugUtilsMessengerEXT debugMessenger,
         const VkAllocationCallbacks* pAllocator)
@@ -601,7 +540,7 @@ void ArcticEngine::vulkanDestroyDebugUtilsMessengerEXT(
         func(instance, debugMessenger, pAllocator);
 }
 
-void ArcticEngine::vulkanPopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+void VulkanLoader::vulkanPopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
 {
     createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -616,7 +555,7 @@ void ArcticEngine::vulkanPopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerC
     createInfo.pfnUserCallback = debugCallback;
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL ArcticEngine::debugCallback(
+VKAPI_ATTR VkBool32 VKAPI_CALL VulkanLoader::debugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         VkDebugUtilsMessageTypeFlagsEXT messageType,
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
@@ -628,7 +567,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL ArcticEngine::debugCallback(
 
 #pragma endregion vulkan_validation
 
-void ArcticEngine::vulkanLoadSurface()
+void VulkanLoader::vulkanLoadSurface()
 {
     // create native surface
     VkWin32SurfaceCreateInfoKHR createInfo{};
@@ -650,4 +589,52 @@ void ArcticEngine::vulkanLoadSurface()
         std::cout << "error: vulkan: failed to create glfw window surface!";
         return;
     }
+}
+
+void VulkanLoader::Load()
+{
+    // init glfw
+    glfwInit();
+
+    // set hints
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+    // create window
+    window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Vulkan", nullptr, nullptr);
+
+    // check validation layers
+    if(enableValidationLayers && !vulkanFoundValidationLayers())
+    {
+        std::cout << "error: vulkan: validation layers requested, but not available!";
+        return;
+    }
+
+    // create instance
+    vulkanCreateInstance();
+    vulkanLoadDebugMessenger();
+    vulkanLoadSurface();
+    vulkanLoadPhysicalDevice();
+    vulkanCreateLogicalDevice();
+    vulkanCreateSwapChain();
+    vulkanCreateImageViews();
+    vulkanCreatePipeline();
+}
+
+void VulkanLoader::Cleanup()
+{
+    // vulkan
+    for(auto & imageView : swapChainImageViews)
+    {
+        vkDestroyImageView(vkDevice, imageView, nullptr);
+    }
+    vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+    vkDestroyDevice(vkDevice, nullptr);
+    vulkanDestroyDebugMessenger();
+    vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+    vkDestroyInstance(vkInstance, nullptr);
+
+    // glfw
+    glfwDestroyWindow(window);
+    glfwTerminate();
 }

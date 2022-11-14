@@ -1,30 +1,28 @@
 //
-// Created by Benjamin on 11/11/2022.
+// Created by Benjamin on 14/11/2022.
 //
 
-#ifndef ARCTIC_ARCTIC_ENGINE_H
-#define ARCTIC_ARCTIC_ENGINE_H
+#ifndef ARCTIC_VULKANLOADER_H
+#define ARCTIC_VULKANLOADER_H
 
-#include <iostream>
 #include <vector>
 #include <optional>
+#include <set>
 #include <vulkan/vulkan_core.h>
 
 class GLFWwindow;
 
-class ArcticEngine
+class VulkanLoader
 {
 public:
-    void run()
-    {
-        initWindow();
-        vulkanInitialization();
-        mainLoop();
-        cleanup();
+    void Load();
+    void Cleanup();
+
+    GLFWwindow* GetWindow() {
+        return window;
     }
 
 private:
-
     // glfw
     const uint32_t WINDOW_WIDTH = 1280;
     const uint32_t WINDOW_HEIGHT = 720;
@@ -44,19 +42,6 @@ private:
     const std::vector<const char*> requiredDeviceExtensions = {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
-
-    // .. debugging
-    const bool enableValidationLayers = false;
-
-    VkDebugUtilsMessengerEXT debugMessenger;
-    const std::vector<const char*> validationLayers = {
-            "VK_LAYER_KHRONOS_validation" // all the useful standard validation is bundled into a layer included in the SDK
-    };
-
-    void initWindow();
-    void vulkanInitialization();
-    void mainLoop();
-    void cleanup();
 
     struct QueueFamilyIndices
     {
@@ -83,6 +68,15 @@ private:
         VkExtent2D extent;
     };
     SwapChainData swapChainData;
+
+    // .. debugging
+    const bool enableValidationLayers = false;
+
+    VkDebugUtilsMessengerEXT debugMessenger;
+    const std::vector<const char*> validationLayers = {
+            "VK_LAYER_KHRONOS_validation" // all the useful standard validation is bundled into a layer included in the SDK
+    };
+
 
     void vulkanCreateInstance();
     void vulkanLoadDebugMessenger();
@@ -120,13 +114,12 @@ private:
                                              VkDebugUtilsMessengerEXT debugMessenger,
                                              const VkAllocationCallbacks* pAllocator);
 
-    static VKAPI_ATTR VkBool32 VKAPI_CALL ArcticEngine::debugCallback(
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
             VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
             VkDebugUtilsMessageTypeFlagsEXT messageType,
             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
             void* pUserData);
-
 };
 
 
-#endif //ARCTIC_ARCTIC_ENGINE_H
+#endif //ARCTIC_VULKANLOADER_H
