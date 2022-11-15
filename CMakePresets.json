@@ -20,7 +20,8 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
         "CMAKE_C_COMPILER": "clang-cl.exe",
-        "CMAKE_CXX_COMPILER": "clang-cl.exe"
+        "CMAKE_CXX_COMPILER": "clang-cl.exe",
+        "CMAKE_CXX_COMPILER_VERSION": "15.0.1"
       }
     },
     {

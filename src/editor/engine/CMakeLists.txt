@@ -9,15 +9,17 @@ message("target is ${TARGET}")
 add_library(${TARGET} STATIC)
 
 # set properties
-set(INCLUDE_DIRS ${EDITOR_MODULE_DIR}/public)
+set(INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/include)
+set(SRC_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
+
 set_target_properties(${TARGET} PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(${TARGET} PROPERTIES INCLUDE_DIRS ${INCLUDE_DIRS})
 
 # set private sources
 target_sources(${TARGET}
         PRIVATE
-        arctic_engine.cpp
-        vulkan_loader.cpp)
+        ${SRC_DIR}/arctic_engine.cpp
+        ${SRC_DIR}/vulkan_loader.cpp)
 
 # set public sources
 target_include_directories(${TARGET}
