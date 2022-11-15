@@ -1,7 +1,3 @@
-//
-// Created by Benjamin on 14/11/2022.
-//
-
 #include "vulkan_loader.h"
 
 #ifdef WIN32

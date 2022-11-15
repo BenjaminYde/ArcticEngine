@@ -69,14 +69,6 @@ private:
     };
     SwapChainData swapChainData;
 
-    // .. debugging
-    const bool enableValidationLayers = false;
-
-    VkDebugUtilsMessengerEXT debugMessenger;
-    const std::vector<const char*> validationLayers = {
-            "VK_LAYER_KHRONOS_validation" // all the useful standard validation is bundled into a layer included in the SDK
-    };
-
 
     void vulkanCreateInstance();
     void vulkanLoadDebugMessenger();
@@ -103,6 +95,13 @@ private:
     VkExtent2D selectSwapChainExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
     // validation layers
+    const bool enableValidationLayers = false;
+
+    VkDebugUtilsMessengerEXT debugMessenger;
+    const std::vector<const char*> validationLayers = {
+            "VK_LAYER_KHRONOS_validation" // all the useful standard validation is bundled into a layer included in the SDK
+    };
+
     void vulkanDestroyDebugMessenger();
     bool vulkanFoundValidationLayers();
     VkResult vulkanCreateDebugUtilsMessengerEXT(VkInstance instance,
@@ -120,6 +119,5 @@ private:
             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
             void* pUserData);
 };
-
 
 #endif //ARCTIC_VULKANLOADER_H

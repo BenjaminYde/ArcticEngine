@@ -6,12 +6,11 @@ class VulkanLoader;
 class ArcticEngine
 {
 public:
+    void initialize();
     void run();
-
+    void cleanup();
 private:
     VulkanLoader* vulkanLoader;
-
-    void mainLoop();
 };
 
 #endif //ARCTIC_ARCTIC_ENGINE_H
