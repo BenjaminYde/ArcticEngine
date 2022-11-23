@@ -1,4 +1,5 @@
 #include "engine/arctic_engine.h"
+#include <iostream>
 
 int main()
 {
@@ -6,6 +7,6 @@ int main()
     engine.initialize();
     engine.run();
     engine.cleanup();
-    
+
     return 0;
 }

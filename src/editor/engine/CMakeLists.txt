@@ -10,6 +10,7 @@ add_library(${TARGET} STATIC)
 
 # set variables
 set(INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/include)
+set(INCLUDE_DIRS_INTERNAL ${INCLUDE_DIRS}/engine)
 set(SRC_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
 
 # set properties
@@ -18,6 +19,8 @@ set_target_properties(${TARGET} PROPERTIES
 
 # set sources
 target_sources(${TARGET}
+        PUBLIC
+        ${INCLUDE_DIRS_INTERNAL}/arctic_engine.h
         PRIVATE
         ${SRC_DIR}/arctic_engine.cpp
         ${SRC_DIR}/vulkan_loader.cpp)
@@ -46,3 +49,8 @@ endif()
 FindPackage_Vulkan(${TARGET})
 FindPackage_GLFW(  ${TARGET})
 FindPackage_GLM(   ${TARGET})
+
+# add module: utilities
+target_link_libraries(${TARGET} PRIVATE Utilities)
+get_target_property(Utilties_INCLUDE_DIRS Utilities INCLUDE_DIRS)
+target_include_directories(${TARGET} PRIVATE ${Utilties_INCLUDE_DIRS})

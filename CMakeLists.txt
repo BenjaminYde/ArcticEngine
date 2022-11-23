@@ -37,6 +37,10 @@ else()
         message(FATAL_ERROR "Project must be compiled using preset! Current compiler is ${CMAKE_CXX_COMPILER_ID}")
 endif()
 
+#defines
+add_definitions(-DARCTIC_ASSETS_DIR="${CMAKE_CURRENT_LIST_DIR}/assets")
+
 # add sub directories
 add_subdirectory(external)
 add_subdirectory(src)
+

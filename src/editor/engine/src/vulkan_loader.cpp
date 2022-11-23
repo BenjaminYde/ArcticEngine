@@ -1,4 +1,5 @@
 #include "vulkan_loader.h"
+#include "utilities/file_utility.h"
 
 #ifdef WIN32
 #define VK_USE_PLATFORM_WIN32_KHR
@@ -11,6 +12,7 @@
 #include <algorithm>
 #include <limits>
 #include <iostream>
+#include <format>
 
 void VulkanLoader::vulkanCreateInstance()
 {
@@ -452,7 +454,15 @@ VkExtent2D VulkanLoader::selectSwapChainExtent(const VkSurfaceCapabilitiesKHR& c
 
 void VulkanLoader::vulkanCreatePipeline()
 {
+    // read vert shader
+    std::vector<char> fileVert;
+    std::string pathVert = std::format("{}/shaders/{}",ARCTIC_ASSETS_DIR,"vert.spv");
+    FileUtility::ReadBinaryFile(pathVert, fileVert);
 
+    // read frag shader
+    std::vector<char> fileFrag;
+    std::string pathFrag= std::format("{}/shaders/{}",ARCTIC_ASSETS_DIR,"frag.spv");
+    FileUtility::ReadBinaryFile(pathFrag, fileFrag);
 }
 
 #pragma endregion vulkan_pipeline

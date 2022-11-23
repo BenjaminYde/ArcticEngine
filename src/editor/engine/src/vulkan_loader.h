@@ -88,7 +88,7 @@ private:
     QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice& device);
     bool findRequiredDeviceExtensions(const VkPhysicalDevice& device);
 
-    // sawp chain
+    // swap chain
     SwapChainDeviceSupport querySwapChainSupport(const VkPhysicalDevice& device);
     VkSurfaceFormatKHR selectSwapChainSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
     VkPresentModeKHR selectSwapChainPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
