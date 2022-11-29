@@ -16,6 +16,7 @@ set_target_properties(${TARGET} PROPERTIES
 target_sources(${TARGET}
         PUBLIC
         ${INCLUDE_DIRS_INTERNAL}/file_utility.h
+        ${INCLUDE_DIRS_INTERNAL}/Application.h
         PRIVATE
         ${SRC_DIR}/file_utility.cpp)
 

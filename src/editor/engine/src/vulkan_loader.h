@@ -78,6 +78,7 @@ private:
     void vulkanCreateSwapChain();
     void vulkanCreateImageViews();
     void vulkanCreatePipeline();
+    bool vulkanCreateShaderModule(const std::vector<char>& code, VkShaderModule& shaderModule);
 
     // devices
     std::vector<const char*> vulkanGetRequiredExtensions();

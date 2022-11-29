@@ -1,5 +1,6 @@
 #include "vulkan_loader.h"
 #include "utilities/file_utility.h"
+#include "utilities/Application.h"
 
 #ifdef WIN32
 #define VK_USE_PLATFORM_WIN32_KHR
@@ -454,15 +455,53 @@ VkExtent2D VulkanLoader::selectSwapChainExtent(const VkSurfaceCapabilitiesKHR& c
 
 void VulkanLoader::vulkanCreatePipeline()
 {
-    // read vert shader
+    // read vertex shader
     std::vector<char> fileVert;
-    std::string pathVert = std::format("{}/shaders/{}",ARCTIC_ASSETS_DIR,"vert.spv");
+    std::string pathVert = std::format("{}/shaders/{}", Application::AssetsPath, "vert.spv");
     FileUtility::ReadBinaryFile(pathVert, fileVert);
+    VkShaderModule shaderModuleVert;
+    vulkanCreateShaderModule(fileVert, shaderModuleVert);
 
     // read frag shader
     std::vector<char> fileFrag;
-    std::string pathFrag= std::format("{}/shaders/{}",ARCTIC_ASSETS_DIR,"frag.spv");
+    std::string pathFrag= std::format("{}/shaders/{}",Application::AssetsPath, "frag.spv");
     FileUtility::ReadBinaryFile(pathFrag, fileFrag);
+    VkShaderModule shaderModuleFrag;
+    vulkanCreateShaderModule(fileFrag, shaderModuleFrag);
+
+    // create pipeline: vertex
+    VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vertShaderStageInfo.module = shaderModuleVert;
+    vertShaderStageInfo.pName = "main";
+
+    // create pipeline: frag
+    VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragShaderStageInfo.module = shaderModuleFrag;
+    fragShaderStageInfo.pName = "main";
+
+    // combine pipelines
+    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+
+    // cleanup shaders
+    vkDestroyShaderModule(vkDevice, shaderModuleVert, nullptr);
+    vkDestroyShaderModule(vkDevice, shaderModuleFrag, nullptr);
+}
+
+bool VulkanLoader::vulkanCreateShaderModule(const std::vector<char>& code, VkShaderModule& shaderModule)
+{
+    // create shader create info
+    VkShaderModuleCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.codeSize = code.size();
+    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+    // create shader
+    VkResult result = vkCreateShaderModule(vkDevice, &createInfo, nullptr, &shaderModule);
+    return result == VK_SUCCESS;
 }
 
 #pragma endregion vulkan_pipeline
