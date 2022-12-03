@@ -1,6 +1,6 @@
 #include "vulkan_loader.h"
 #include "utilities/file_utility.h"
-#include "utilities/Application.h"
+#include "utilities/application.h"
 
 #ifdef WIN32
 #define VK_USE_PLATFORM_WIN32_KHR
@@ -453,6 +453,60 @@ VkExtent2D VulkanLoader::selectSwapChainExtent(const VkSurfaceCapabilitiesKHR& c
 
 #pragma region vulkan_pipeline
 
+void VulkanLoader::vulkanCreateRenderPass()
+{
+    // create color attachment
+    VkAttachmentDescription colorAttachment{};
+    colorAttachment.format = swapChainData.imageFormat;
+    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+
+    // what to do before and after rendering
+    //> clear to black before rendering
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    // currently application won't do anything with the stencil buffer
+    // todo later: set correct values when need to use the stencil
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+    // images need to be transitioned to specific layouts that are suitable
+    // for the operation that they're going to be involved in next
+    // for example: textures and framebuffers in Vulkan are represented by 'VkImage' objects
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    // create color attachment reference
+    // every subpass references one or more attachment rederences
+    //> only one is used
+    VkAttachmentReference colorAttachmentRef{};
+    colorAttachmentRef.attachment = 0;
+    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    // create sub pass
+    //> the index of the attachment in this array is directly referenced from the fragment shader with
+    //> "layout(location = 0) out vec4 outColor" directive
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachmentRef;
+
+    // create render pass
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+
+    VkResult resultPipeline = vkCreateRenderPass(vkDevice, &renderPassInfo, nullptr, &vkRenderPass);
+    if (resultPipeline != VK_SUCCESS)
+    {
+        std::cout <<"error: vulkan: failed to create render pass!";
+        return;
+    }
+}
+
 void VulkanLoader::vulkanCreatePipeline()
 {
     // read vertex shader
@@ -802,6 +856,7 @@ void VulkanLoader::Load()
     vulkanCreateLogicalDevice();
     vulkanCreateSwapChain();
     vulkanCreateImageViews();
+    vulkanCreateRenderPass();
     vulkanCreatePipeline();
 }
 
@@ -809,6 +864,7 @@ void VulkanLoader::Cleanup()
 {
     // vulkan
     vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+    vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
     for(auto & imageView : swapChainImageViews)
     {
         vkDestroyImageView(vkDevice, imageView, nullptr);

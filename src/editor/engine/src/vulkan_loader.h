@@ -39,6 +39,7 @@ private:
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
 
+    VkRenderPass vkRenderPass;
     VkPipelineLayout vkPipelineLayout;
 
     const std::vector<const char*> requiredDeviceExtensions = {
@@ -71,7 +72,6 @@ private:
     };
     SwapChainData swapChainData;
 
-
     void vulkanCreateInstance();
     void vulkanLoadDebugMessenger();
     void vulkanLoadSurface();
@@ -79,6 +79,7 @@ private:
     void vulkanCreateLogicalDevice();
     void vulkanCreateSwapChain();
     void vulkanCreateImageViews();
+    void vulkanCreateRenderPass();
     void vulkanCreatePipeline();
     bool vulkanCreateShaderModule(const std::vector<char>& code, VkShaderModule& shaderModule);
 
