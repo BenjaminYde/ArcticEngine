@@ -453,6 +453,39 @@ VkExtent2D VulkanLoader::selectSwapChainExtent(const VkSurfaceCapabilitiesKHR& c
 
 #pragma region vulkan_pipeline
 
+void VulkanLoader::vulkanCreateFramebuffers()
+{
+    // set size of frame buffers
+    swapChainFramebuffers.resize(swapChainImageViews.size());
+
+    // loop over ALL swap chain image views
+    for (size_t i = 0; i < swapChainImageViews.size(); i++)
+    {
+        VkImageView attachments[] =
+        {
+                swapChainImageViews[i]
+        };
+
+        // create info: frame buffer
+        VkFramebufferCreateInfo framebufferInfo{};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = vkRenderPass;
+        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.width = swapChainData.extent.width;
+        framebufferInfo.height = swapChainData.extent.height;
+        framebufferInfo.layers = 1;
+
+        // create frame buffer
+        VkResult resultFrameBuffer = vkCreateFramebuffer(vkDevice, &framebufferInfo, nullptr, &swapChainFramebuffers[i]);
+        if (resultFrameBuffer != VK_SUCCESS)
+        {
+            throw std::runtime_error("error: vulkan: failed to create framebuffer!");
+            return;
+        }
+    }
+}
+
 void VulkanLoader::vulkanCreateRenderPass()
 {
     // create color attachment
@@ -491,7 +524,7 @@ void VulkanLoader::vulkanCreateRenderPass()
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
 
-    // create render pass
+    // create info: render pass
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = 1;
@@ -499,6 +532,7 @@ void VulkanLoader::vulkanCreateRenderPass()
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
 
+    // create render pass
     VkResult resultPipeline = vkCreateRenderPass(vkDevice, &renderPassInfo, nullptr, &vkRenderPass);
     if (resultPipeline != VK_SUCCESS)
     {
@@ -894,6 +928,10 @@ void VulkanLoader::Load()
 void VulkanLoader::Cleanup()
 {
     // vulkan
+    for (auto framebuffer : swapChainFramebuffers) {
+        vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
+    }
+
     vkDestroyPipeline(vkDevice, vkPipeline, nullptr);
     vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
     vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);

@@ -42,6 +42,7 @@ private:
     VkRenderPass vkRenderPass;
     VkPipelineLayout vkPipelineLayout;
     VkPipeline vkPipeline;
+    std::vector<VkFramebuffer> swapChainFramebuffers;
 
     const std::vector<const char*> requiredDeviceExtensions = {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -82,6 +83,7 @@ private:
     void vulkanCreateImageViews();
     void vulkanCreateRenderPass();
     void vulkanCreatePipeline();
+    void vulkanCreateFramebuffers();
     bool vulkanCreateShaderModule(const std::vector<char>& code, VkShaderModule& shaderModule);
 
     // devices
