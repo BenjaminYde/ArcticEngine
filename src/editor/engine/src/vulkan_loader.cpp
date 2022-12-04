@@ -306,8 +306,8 @@ void VulkanLoader::vulkanCreateSwapChain()
     if(isQueueFamilyShared)
     {
         createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        createInfo.queueFamilyIndexCount = 0; // Optional
-        createInfo.pQueueFamilyIndices = nullptr; // Optional
+        createInfo.queueFamilyIndexCount = 0; // optional
+        createInfo.pQueueFamilyIndices = nullptr; // optional
     }
     else
     {
@@ -563,9 +563,9 @@ void VulkanLoader::vulkanCreatePipeline()
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
+    vertexInputInfo.pVertexBindingDescriptions = nullptr; // optional
     vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
+    vertexInputInfo.pVertexAttributeDescriptions = nullptr; // optional
 
     // create info: input assembly
     //> what kind of geometry/topology will be drawn from the vertices
@@ -611,9 +611,9 @@ void VulkanLoader::vulkanCreatePipeline()
     rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
 
     rasterizer.depthBiasEnable = VK_FALSE;
-    rasterizer.depthBiasConstantFactor = 0.0f; // Optional
-    rasterizer.depthBiasClamp = 0.0f; // Optional
-    rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
+    rasterizer.depthBiasConstantFactor = 0.0f; // optional
+    rasterizer.depthBiasClamp = 0.0f; // optional
+    rasterizer.depthBiasSlopeFactor = 0.0f; // optional
 
     // create info: multi sampling
     //> one of the ways to perform anti-aliasing
@@ -621,10 +621,10 @@ void VulkanLoader::vulkanCreatePipeline()
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    multisampling.minSampleShading = 1.0f; // Optional
-    multisampling.pSampleMask = nullptr; // Optional
-    multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
-    multisampling.alphaToOneEnable = VK_FALSE; // Optional
+    multisampling.minSampleShading = 1.0f; // optional
+    multisampling.pSampleMask = nullptr; // optional
+    multisampling.alphaToCoverageEnable = VK_FALSE; // optional
+    multisampling.alphaToOneEnable = VK_FALSE; // optional
 
     // create info: depth and stencil testing
     // todo
@@ -656,26 +656,57 @@ void VulkanLoader::vulkanCreatePipeline()
     VkPipelineColorBlendStateCreateInfo colorBlending{};
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable = VK_FALSE;
-    colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
+    colorBlending.logicOp = VK_LOGIC_OP_COPY; // optional
     colorBlending.attachmentCount = 1;
     colorBlending.pAttachments = &colorBlendAttachment;
-    colorBlending.blendConstants[0] = 0.0f; // Optional
-    colorBlending.blendConstants[1] = 0.0f; // Optional
-    colorBlending.blendConstants[2] = 0.0f; // Optional
-    colorBlending.blendConstants[3] = 0.0f; // Optional
+    colorBlending.blendConstants[0] = 0.0f; // optional
+    colorBlending.blendConstants[1] = 0.0f; // optional
+    colorBlending.blendConstants[2] = 0.0f; // optional
+    colorBlending.blendConstants[3] = 0.0f; // optional
 
     // create info: pipeline layout
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 0; // Optional
-    pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
-    pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-    pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+    pipelineLayoutInfo.setLayoutCount = 0; // optional
+    pipelineLayoutInfo.pSetLayouts = nullptr; // optional
+    pipelineLayoutInfo.pushConstantRangeCount = 0; // optional
+    pipelineLayoutInfo.pPushConstantRanges = nullptr; // optional
 
-    VkResult resultPipeline = vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &vkPipelineLayout);
-    if (resultPipeline != VK_SUCCESS)
+    VkResult resultPipelineLayout = vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &vkPipelineLayout);
+    if (resultPipelineLayout != VK_SUCCESS)
     {
         std::cout <<"error: vulkan: failed to create pipeline layout!";
+        return;
+    }
+
+    // create info: graphics pipeline
+    VkGraphicsPipelineCreateInfo pipelineInfo{};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipelineInfo.stageCount = 2;
+    pipelineInfo.pStages = shaderStages;
+
+    pipelineInfo.pVertexInputState = &vertexInputInfo;
+    pipelineInfo.pInputAssemblyState = &inputAssembly;
+    pipelineInfo.pViewportState = &viewportState;
+    pipelineInfo.pRasterizationState = &rasterizer;
+    pipelineInfo.pMultisampleState = &multisampling;
+    pipelineInfo.pDepthStencilState = nullptr; // optional
+    pipelineInfo.pColorBlendState = &colorBlending;
+    pipelineInfo.pDynamicState = &dynamicState;
+
+    pipelineInfo.layout = vkPipelineLayout;
+
+    pipelineInfo.renderPass = vkRenderPass;
+    pipelineInfo.subpass = 0;
+
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // optional: inherit from other pipelines (can be faster)
+    pipelineInfo.basePipelineIndex = -1; // optional
+
+    // info: it is designed to take multiple VkGraphicsPipelineCreateInfo objects and create multiple VkPipeline objects in a single call
+    VkResult resultPipeline = vkCreateGraphicsPipelines(vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &vkPipeline);
+    if (resultPipeline != VK_SUCCESS)
+    {
+        std::cout <<"error: vulkan: failed to create pipeline!";
         return;
     }
 
@@ -863,6 +894,7 @@ void VulkanLoader::Load()
 void VulkanLoader::Cleanup()
 {
     // vulkan
+    vkDestroyPipeline(vkDevice, vkPipeline, nullptr);
     vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
     vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
     for(auto & imageView : swapChainImageViews)

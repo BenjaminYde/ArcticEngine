@@ -41,6 +41,7 @@ private:
 
     VkRenderPass vkRenderPass;
     VkPipelineLayout vkPipelineLayout;
+    VkPipeline vkPipeline;
 
     const std::vector<const char*> requiredDeviceExtensions = {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME
