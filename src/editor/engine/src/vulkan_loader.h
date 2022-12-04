@@ -16,6 +16,7 @@ class VulkanLoader
 {
 public:
     void Load();
+    void Draw();
     void Cleanup();
 
     GLFWwindow* GetWindow() {
@@ -43,9 +44,16 @@ private:
     VkPipelineLayout vkPipelineLayout;
     VkPipeline vkPipeline;
 
+    VkQueue vkGraphicsQueue;
+    VkQueue vkPresentQueue;
+
     std::vector<VkFramebuffer> swapChainFramebuffers;
     VkCommandPool vkCommandPool;
     VkCommandBuffer vkCommandBuffer;
+
+    VkSemaphore imageAvailableSemaphore;
+    VkSemaphore renderFinishedSemaphore;
+    VkFence isDoneRenderingFence;
 
     const std::vector<const char*> requiredDeviceExtensions = {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -89,6 +97,7 @@ private:
     void vulkanCreateFramebuffers();
     void vulkanCreateCommandPool();
     void vulkanCreateCommandBuffer();
+    void vulkanCreateSyncObjects();
     void vulkanRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
     bool vulkanCreateShaderModule(const std::vector<char>& code, VkShaderModule& shaderModule);
 

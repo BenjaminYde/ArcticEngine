@@ -9,6 +9,7 @@ void ArcticEngine::run()
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
+        vulkanLoader->Draw();
     }
 }
 
