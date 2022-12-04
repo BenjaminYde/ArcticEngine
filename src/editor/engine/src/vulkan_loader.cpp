@@ -453,39 +453,6 @@ VkExtent2D VulkanLoader::selectSwapChainExtent(const VkSurfaceCapabilitiesKHR& c
 
 #pragma region vulkan_pipeline
 
-void VulkanLoader::vulkanCreateFramebuffers()
-{
-    // set size of frame buffers
-    swapChainFramebuffers.resize(swapChainImageViews.size());
-
-    // loop over ALL swap chain image views
-    for (size_t i = 0; i < swapChainImageViews.size(); i++)
-    {
-        VkImageView attachments[] =
-        {
-                swapChainImageViews[i]
-        };
-
-        // create info: frame buffer
-        VkFramebufferCreateInfo framebufferInfo{};
-        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = vkRenderPass;
-        framebufferInfo.attachmentCount = 1;
-        framebufferInfo.pAttachments = attachments;
-        framebufferInfo.width = swapChainData.extent.width;
-        framebufferInfo.height = swapChainData.extent.height;
-        framebufferInfo.layers = 1;
-
-        // create frame buffer
-        VkResult resultFrameBuffer = vkCreateFramebuffer(vkDevice, &framebufferInfo, nullptr, &swapChainFramebuffers[i]);
-        if (resultFrameBuffer != VK_SUCCESS)
-        {
-            throw std::runtime_error("error: vulkan: failed to create framebuffer!");
-            return;
-        }
-    }
-}
-
 void VulkanLoader::vulkanCreateRenderPass()
 {
     // create color attachment
@@ -740,7 +707,7 @@ void VulkanLoader::vulkanCreatePipeline()
     VkResult resultPipeline = vkCreateGraphicsPipelines(vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &vkPipeline);
     if (resultPipeline != VK_SUCCESS)
     {
-        std::cout <<"error: vulkan: failed to create pipeline!";
+        std::cout << "error: vulkan: failed to create pipeline!";
         return;
     }
 
@@ -759,7 +726,149 @@ bool VulkanLoader::vulkanCreateShaderModule(const std::vector<char>& code, VkSha
 
     // create shader
     VkResult result = vkCreateShaderModule(vkDevice, &createInfo, nullptr, &shaderModule);
-    return result == VK_SUCCESS;
+    if (result != VK_SUCCESS)
+    {
+        std::cout <<"error: vulkan: failed to create shader module!";
+        return false;
+    }
+    return true;
+}
+
+void VulkanLoader::vulkanCreateFramebuffers()
+{
+    // set size of frame buffers
+    swapChainFramebuffers.resize(swapChainImageViews.size());
+
+    // loop over ALL swap chain image views
+    for (size_t i = 0; i < swapChainImageViews.size(); i++)
+    {
+        VkImageView attachments[] =
+                {
+                        swapChainImageViews[i]
+                };
+
+        // create info: frame buffer
+        //> you can only use a framebuffer with the render passes that it is compatible with
+        //> which roughly means that they use the same number and type of attachments
+        VkFramebufferCreateInfo framebufferInfo{};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = vkRenderPass;
+        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.width = swapChainData.extent.width;
+        framebufferInfo.height = swapChainData.extent.height;
+        framebufferInfo.layers = 1;
+
+        // create frame buffer
+        VkResult resultFrameBuffer = vkCreateFramebuffer(vkDevice, &framebufferInfo, nullptr, &swapChainFramebuffers[i]);
+        if (resultFrameBuffer != VK_SUCCESS)
+        {
+            std::cout <<"error: vulkan: failed to create framebuffer!";
+            return;
+        }
+    }
+}
+
+void VulkanLoader::vulkanCreateCommandPool()
+{
+    QueueFamilyIndices queueFamilyIndices = findQueueFamilies(vkPhysicalDevice);
+
+    // create info: command pool
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // we record a command buffer every frame, so we want to be able to reset and re-record
+    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+
+    // create command pool
+    VkResult result = vkCreateCommandPool(vkDevice, &poolInfo, nullptr, &vkCommandPool);
+    if (result != VK_SUCCESS)
+    {
+        std::cout << "error: vulkan: failed to create command pool!";
+        return;
+    }
+}
+
+void VulkanLoader::vulkanCreateCommandBuffer()
+{
+    // create info: command buffer allocation
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = vkCommandPool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; // can be submitted to a queue for execution, but cannot be called from other command buffers
+    allocInfo.commandBufferCount = 1;
+
+    // create command buffer
+    VkResult result = vkAllocateCommandBuffers(vkDevice, &allocInfo, &vkCommandBuffer);
+    if (result != VK_SUCCESS)
+    {
+        std::cout << "error: vulkan: failed to create command buffer!";
+        return;
+    }
+}
+
+void VulkanLoader::vulkanRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+{
+    // command buffer: begin
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = 0; // optional
+    beginInfo.pInheritanceInfo = nullptr; // optional
+
+    VkResult resultBeginCommandBuffer = vkBeginCommandBuffer(commandBuffer, &beginInfo);
+    if (resultBeginCommandBuffer != VK_SUCCESS)
+    {
+        std::cout << "error: vulkan: failed to begin command buffer!";
+        return;
+    }
+
+    // command buffer: begin render pass
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = vkRenderPass;
+    renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
+
+    renderPassInfo.renderArea.offset = VkOffset2D {0, 0};
+    renderPassInfo.renderArea.extent = swapChainData.extent;
+
+    VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+    renderPassInfo.clearValueCount = 1;
+    renderPassInfo.pClearValues = &clearColor;
+
+    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    // command buffer: bind to pipeline
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline);
+
+    // command buffer: set viewport
+    VkViewport viewport{};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = (float) swapChainData.extent.width;
+    viewport.height = (float) swapChainData.extent.height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+    // command buffer: set scissor
+    VkRect2D scissor{};
+    scissor.offset = {0, 0};
+    scissor.extent = swapChainData.extent;
+    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+    // command buffer: draw
+    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+    // command buffer: end render pass
+    vkCmdEndRenderPass(commandBuffer);
+
+    // command buffer: end
+    VkResult resultEndCommandBuffer = vkEndCommandBuffer(commandBuffer);
+    if (resultEndCommandBuffer != VK_SUCCESS)
+    {
+        std::cout << "error: vulkan: failed to end command buffer!";
+        return;
+    }
+
 }
 
 #pragma endregion vulkan_pipeline
@@ -923,11 +1032,17 @@ void VulkanLoader::Load()
     vulkanCreateImageViews();
     vulkanCreateRenderPass();
     vulkanCreatePipeline();
+    vulkanCreateFramebuffers();
+    vulkanCreateCommandPool();
+    vulkanCreateCommandBuffer();
 }
 
 void VulkanLoader::Cleanup()
 {
     // vulkan
+
+    vkDestroyCommandPool(vkDevice, vkCommandPool, nullptr);
+
     for (auto framebuffer : swapChainFramebuffers) {
         vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
     }

@@ -42,7 +42,10 @@ private:
     VkRenderPass vkRenderPass;
     VkPipelineLayout vkPipelineLayout;
     VkPipeline vkPipeline;
+
     std::vector<VkFramebuffer> swapChainFramebuffers;
+    VkCommandPool vkCommandPool;
+    VkCommandBuffer vkCommandBuffer;
 
     const std::vector<const char*> requiredDeviceExtensions = {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -84,6 +87,9 @@ private:
     void vulkanCreateRenderPass();
     void vulkanCreatePipeline();
     void vulkanCreateFramebuffers();
+    void vulkanCreateCommandPool();
+    void vulkanCreateCommandBuffer();
+    void vulkanRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
     bool vulkanCreateShaderModule(const std::vector<char>& code, VkShaderModule& shaderModule);
 
     // devices
