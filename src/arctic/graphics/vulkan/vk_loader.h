@@ -22,7 +22,6 @@ public:
     void ReloadSwapChain();
 
 private:
-
     // vulkan
     VkInstance vkInstance = nullptr;
 
@@ -60,10 +59,7 @@ private:
     void vulkanCreateInstance(const VulkanWindow & vulkanWindow);
     void vulkanLoadDebugMessenger();
     
-    void vulkanLoadPhysicalDevice(
-        const VkInstance& instance,
-        const VkSurfaceKHR& surface,
-        const VulkanSwapChain& swapChain);
+    void vulkanLoadPhysicalDevice(const VkInstance& instance, const VkSurfaceKHR& surface);
 
     void vulkanCreateLogicalDevice(const VkPhysicalDevice & vkPhysicalDevice, QueueFamilyIndices indices);
 
@@ -71,7 +67,6 @@ private:
     std::vector<const char*> vulkanGetRequiredExtensions(const VulkanWindow & vulkanWindow);
     bool isVkDeviceSuitable(const VkPhysicalDevice& device,
                             const VkSurfaceKHR & vkSurface,
-                            const VulkanSwapChain & swapChain,
                             VkPhysicalDeviceProperties deviceProperties,
                             VkPhysicalDeviceFeatures deviceFeatures,
                             QueueFamilyIndices queueFamilyIndices) const;

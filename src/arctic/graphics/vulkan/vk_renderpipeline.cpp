@@ -19,8 +19,8 @@ VulkanRenderPipeline::VulkanRenderPipeline(
 }
 
 void VulkanRenderPipeline::Load(
-    const SwapChainData & swapChainData, 
-    const std::vector<VkImageView> & swapChainImageViews)
+    const SwapChainData& swapChainData, 
+    const std::vector<VkImageView>& swapChainImageViews)
 {
     this->swapChainData=swapChainData;
     this->swapChainImageViews=swapChainImageViews;

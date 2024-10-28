@@ -20,12 +20,12 @@ std::shared_ptr<VulkanRenderLoop> VulkanLoader::GetRenderLoop()
 void VulkanLoader::ReloadSwapChain()
 {
     // re-create swapchain and re-load dependencies on swapchain data
-    pSwapchain->CleanUp(vkDevice);
-    pSwapchain->CreateSwapChain();
+    this->pSwapchain->CleanUp();
+    this->pSwapchain->CreateSwapChain();
 
-    pRenderPipeline->Load(
-        pSwapchain->GetData(), 
-        pSwapchain->GetImageViews());
+    this->pRenderPipeline->Load(
+        this->pSwapchain->GetData(), 
+        this->pSwapchain->GetImageViews());
 }
 
 VulkanLoader::VulkanLoader(std::shared_ptr<VulkanWindow> vulkanWindow)
@@ -41,22 +41,12 @@ VulkanLoader::VulkanLoader(std::shared_ptr<VulkanWindow> vulkanWindow)
     vulkanLoadDebugMessenger();
 
     vulkanWindow->CreateSurface(vkInstance, vkSurface);
-
-    pSwapchain = std::make_shared<VulkanSwapChain>();
-
-    vulkanLoadPhysicalDevice(vkInstance, vkSurface, *pSwapchain);
+    vulkanLoadPhysicalDevice(vkInstance, vkSurface);
     
     QueueFamilyIndices queueFamilyIndices = findQueueFamilies(vkPhysicalDevice, vkSurface);
     vulkanCreateLogicalDevice(vkPhysicalDevice, queueFamilyIndices);
-    
-    // create swapchain
-    pSwapchain->Configure(
-        vkDevice,
-        vkPhysicalDevice,
-        vkSurface,
-        vulkanWindow);
 
-    pSwapchain->CreateSwapChain();
+    this->pSwapchain = std::make_shared<VulkanSwapChain>(vkDevice, vkPhysicalDevice, vkSurface, vulkanWindow);
 
     // create vulkan memory handler
     pMemoryHandler = std::shared_ptr<VulkanMemoryHandler>(new VulkanMemoryHandler(
@@ -73,6 +63,7 @@ VulkanLoader::VulkanLoader(std::shared_ptr<VulkanWindow> vulkanWindow)
         queueFamilyIndices.graphicsFamily.value(),
         queueFamilyIndices.transferFamily.value()));
 
+    this->pSwapchain->CreateSwapChain();
     pRenderPipeline->Load(
         pSwapchain->GetData(), 
         pSwapchain->GetImageViews());
@@ -102,7 +93,7 @@ void VulkanLoader::Cleanup()
     pRenderPipeline.reset();
 
     // images & swapchain
-    pSwapchain->CleanUp(vkDevice);
+    pSwapchain->CleanUp();
     pSwapchain.reset();
 
     // memory
@@ -202,10 +193,7 @@ std::vector<const char*> VulkanLoader::vulkanGetRequiredExtensions(const VulkanW
 
 #pragma region vk_devices
 
-void VulkanLoader::vulkanLoadPhysicalDevice(
-    const VkInstance& instance,
-    const VkSurfaceKHR& surface,
-    const VulkanSwapChain& swapChain)
+void VulkanLoader::vulkanLoadPhysicalDevice(const VkInstance& instance, const VkSurfaceKHR& surface)
 {
     // get available physical devices
     uint32_t deviceCount = 0;
@@ -228,17 +216,17 @@ void VulkanLoader::vulkanLoadPhysicalDevice(
     VkPhysicalDeviceFeatures deviceFeatures;
     QueueFamilyIndices queueFamilyIndices;
 
-    for(auto & device : devices)
+    for(auto &physicalDevice : devices)
     {
         // get data of device
-        vkGetPhysicalDeviceProperties(device, &deviceProperties);
-        vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-        queueFamilyIndices = findQueueFamilies(device, surface);
+        vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+        vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
+        queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
 
         // break loop when found suitable device
-        if(isVkDeviceSuitable(device, surface, swapChain ,deviceProperties, deviceFeatures, queueFamilyIndices))
+        if(isVkDeviceSuitable(physicalDevice, surface, deviceProperties, deviceFeatures, queueFamilyIndices))
         {
-            vkPhysicalDevice = device;
+            vkPhysicalDevice = physicalDevice;
             break;
         }
     }
@@ -305,9 +293,8 @@ void VulkanLoader::vulkanCreateLogicalDevice(const VkPhysicalDevice& physicalDev
 }
 
 bool VulkanLoader::isVkDeviceSuitable(
-        const VkPhysicalDevice & device,
-        const VkSurfaceKHR & surface,
-        const VulkanSwapChain & swapChain,
+        const VkPhysicalDevice& physicalDevice,
+        const VkSurfaceKHR& surface,
         VkPhysicalDeviceProperties deviceProperties,
         VkPhysicalDeviceFeatures deviceFeatures,
         QueueFamilyIndices queueFamilyIndices) const
@@ -325,13 +312,13 @@ bool VulkanLoader::isVkDeviceSuitable(
         return false;
 
     // try find device extensions
-    bool foundDeviceExtensions = findRequiredDeviceExtensions(device);
+    bool foundDeviceExtensions = findRequiredDeviceExtensions(physicalDevice);
     if(!foundDeviceExtensions)
         return false;
 
     // check if swap chain is valid
     // >> see device & surface
-    SwapChainDeviceSupport swapChainSupport = swapChain.QuerySwapChainSupport(device, surface);
+    SwapChainDeviceSupport swapChainSupport = this->pSwapchain->QuerySwapChainSupport(physicalDevice, surface);
     bool isSwapChainValid = !swapChainSupport.surfaceFormats.empty() && !swapChainSupport.presentModes.empty();
     if(!isSwapChainValid)
         return false;
@@ -344,7 +331,6 @@ VulkanLoader::QueueFamilyIndices VulkanLoader::findQueueFamilies(const VkPhysica
     // get queue families
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 

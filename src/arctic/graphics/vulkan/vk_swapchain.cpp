@@ -2,25 +2,17 @@
 #include "arctic/graphics/vulkan/vk_window.h"
 #include <iostream>
 
-void VulkanSwapChain::Configure(
-    VkDevice vkDevice, 
-    VkPhysicalDevice vkPhysicalDevice,
-    VkSurfaceKHR vkSurface,
-    std::shared_ptr<VulkanWindow> window)
+
+VulkanSwapChain::VulkanSwapChain(const VkDevice &vkDevice, const VkPhysicalDevice &vkPhysicalDevice, const VkSurfaceKHR &vkSurface, const std::shared_ptr<VulkanWindow>& window)
+:
+    vkDevice(vkDevice),
+    vkPhysicalDevice(vkPhysicalDevice),
+    vkSurface(vkSurface),
+    window(window)
 {
-    this->vkDevice = vkDevice;
-    this->vkPhysicalDevice = vkPhysicalDevice;
-    this->vkSurface = vkSurface;
-    this->window = window;
 }
 
-void VulkanSwapChain::CreateSwapChain()
-{
-    createSwapChain(vkDevice, vkPhysicalDevice, vkSurface, *window.get());
-    createImageViews(vkDevice);
-}
-
-SwapChainDeviceSupport VulkanSwapChain::QuerySwapChainSupport(const VkPhysicalDevice & device, const VkSurfaceKHR & vkSurface) const
+SwapChainDeviceSupport VulkanSwapChain::QuerySwapChainSupport(const VkPhysicalDevice &device, const VkSurfaceKHR &vkSurface) const
 {
     SwapChainDeviceSupport details;
 
@@ -48,46 +40,14 @@ SwapChainDeviceSupport VulkanSwapChain::QuerySwapChainSupport(const VkPhysicalDe
     return details;
 }
 
-void VulkanSwapChain::CleanUp(const VkDevice &vkDevice)
+bool VulkanSwapChain::CreateSwapChain()
 {
-    // cleanup images
-    for(auto & imageView : swapChainImageViews)
-    {
-        vkDestroyImageView(vkDevice, imageView, nullptr);
-    }
-
-    // cleanup swapchain
-    vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
-}
-
-const SwapChainData VulkanSwapChain::GetData()
-{
-    return this->swapChainData;
-}
-
-const VkSwapchainKHR &VulkanSwapChain::GetSwapChain()
-{
-    return this->vkSwapChain;
-}
-
-const std::vector<VkImageView> &VulkanSwapChain::GetImageViews()
-{
-    return this->swapChainImageViews;
-}
-
-void VulkanSwapChain::createSwapChain(
-    const VkDevice& vkDevice, 
-    const VkPhysicalDevice& vkPhysicalDevice, 
-    const VkSurfaceKHR& vkSurface,
-    const VulkanWindow& window)
-{
-    // query device support
-    SwapChainDeviceSupport swapChainSupport = QuerySwapChainSupport(vkPhysicalDevice, vkSurface);
+    SwapChainDeviceSupport swapChainSupport = QuerySwapChainSupport(this->vkPhysicalDevice, this->vkSurface);
 
     // select best settings from query
     VkSurfaceFormatKHR surfaceFormat = selectSwapChainSurfaceFormat(swapChainSupport.surfaceFormats);
     VkPresentModeKHR presentMode = selectSwapChainPresentMode(swapChainSupport.presentModes);
-    VkExtent2D extent = selectSwapChainExtent(window, swapChainSupport.capabilities);
+    VkExtent2D extent = selectSwapChainExtent(*this->window, swapChainSupport.capabilities);
 
     uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1; // make sure to have al least 2 images
     imageCount = std::clamp(imageCount, static_cast<uint32_t>(1), swapChainSupport.capabilities.maxImageCount);
@@ -123,60 +83,24 @@ void VulkanSwapChain::createSwapChain(
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
     // create swap chain
-    VkResult result = vkCreateSwapchainKHR(vkDevice, &createInfo, nullptr, &vkSwapChain);
+    VkResult result = vkCreateSwapchainKHR(this->vkDevice, &createInfo, nullptr, &this->vkSwapChain);
     if (result != VK_SUCCESS)
     {
         std::cout << "error: vulkan: failed to create swap chain!";
-        return;
+        return false;
     }
 
-    swapChainData = {};
-    swapChainData.imageFormat = surfaceFormat.format;
-    swapChainData.extent = extent;
-    swapChainData.imageCount = imageCount;
-}
-
-void VulkanSwapChain::createImageViews(const VkDevice &vkDevice)
-{
-    // get image handles
-    uint32_t imageCount = swapChainData.imageCount;
-    swapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(vkDevice, vkSwapChain, &imageCount, swapChainImages.data());
-
-    // resize views from created images
-    swapChainImageViews.resize(swapChainImages.size());
+    // set swapchain data
+    this->swapChainData = {};
+    this->swapChainData.imageFormat = surfaceFormat.format;
+    this->swapChainData.extent = extent;
+    this->swapChainData.imageCount = imageCount;
 
     // create views
-    for (size_t i = 0; i < swapChainImages.size(); ++i)
-    {
-        // create view info
-        VkImageViewCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        createInfo.image = swapChainImages[i];
-
-        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        createInfo.format = swapChainData.imageFormat;
-
-        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        createInfo.subresourceRange.baseMipLevel = 0;
-        createInfo.subresourceRange.levelCount = 1;
-        createInfo.subresourceRange.baseArrayLayer = 0;
-        createInfo.subresourceRange.layerCount = 1;
-
-        // create view
-        VkResult result = vkCreateImageView(vkDevice, &createInfo, nullptr, &swapChainImageViews[i]);
-        if (result != VK_SUCCESS)
-        {
-            std::cout << "error: vulkan: failed to create swap chain image view from image!";
-            return;
-        }
-    }
+    createImageViews(this->vkSwapChain, this->swapChainData, &this->swapChainImages, &this->swapChainImageViews);
+    return true;
 }
+
 
 VkSurfaceFormatKHR VulkanSwapChain::selectSwapChainSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats)
 {
@@ -217,4 +141,75 @@ VkExtent2D VulkanSwapChain::selectSwapChainExtent(const VulkanWindow& window, co
     extent.height = std::clamp(static_cast<uint32_t>(framebufferSize.second), capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 
     return extent;
+}
+
+void VulkanSwapChain::CleanUp()
+{
+    // cleanup images
+    for(auto & imageView : this->swapChainImageViews)
+        vkDestroyImageView(this->vkDevice, imageView, nullptr);
+
+    // cleanup swapchain
+    vkDestroySwapchainKHR(this->vkDevice, this->vkSwapChain, nullptr);
+}
+
+const SwapChainData VulkanSwapChain::GetData()
+{
+    return this->swapChainData;
+}
+
+const VkSwapchainKHR &VulkanSwapChain::GetSwapChain()
+{
+    return this->vkSwapChain;
+}
+
+const std::vector<VkImageView> &VulkanSwapChain::GetImageViews()
+{
+    return this->swapChainImageViews;
+}
+
+void VulkanSwapChain::createImageViews(
+    const VkSwapchainKHR& vkSwapChain,
+    const SwapChainData& swapChainData,
+    std::vector<VkImage>* pSwapChainImages,
+    std::vector<VkImageView>* pSwapChainImageViews)
+{
+    // get image handles
+    uint32_t imageCount = swapChainData.imageCount;
+    swapChainImages.resize(imageCount);
+    vkGetSwapchainImagesKHR(vkDevice, vkSwapChain, &imageCount, swapChainImages.data());
+
+    // resize views from created images
+    swapChainImageViews.resize(swapChainImages.size());
+
+    // create views
+    for (size_t i = 0; i < swapChainImages.size(); ++i)
+    {
+        // create view info
+        VkImageViewCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        createInfo.image = swapChainImages[i];
+
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        createInfo.format = swapChainData.imageFormat;
+
+        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        createInfo.subresourceRange.baseMipLevel = 0;
+        createInfo.subresourceRange.levelCount = 1;
+        createInfo.subresourceRange.baseArrayLayer = 0;
+        createInfo.subresourceRange.layerCount = 1;
+
+        // create view
+        VkResult result = vkCreateImageView(vkDevice, &createInfo, nullptr, &swapChainImageViews[i]);
+        if (result != VK_SUCCESS)
+        {
+            std::cout << "error: vulkan: failed to create swap chain image view from image!";
+            return;
+        }
+    }
 }
