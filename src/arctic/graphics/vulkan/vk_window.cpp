@@ -8,9 +8,9 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
 
-SDL_Window* VulkanWindow::GetSDLWindow()
+SDL_Window& VulkanWindow::GetSDLWindow()
 {
-    return this->window;
+    return *this->window;
 }
 
 std::vector<const char*> VulkanWindow::GetExtensions() const

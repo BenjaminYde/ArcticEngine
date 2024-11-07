@@ -14,6 +14,7 @@ Libraries used:
 - [SDL](https://github.com/libsdl-org/SDL): Simple Directmedia Layer (low level access to audio, keyboard, mouse, joystick, and graphics hardware),  `2.30.8`
 - [GLM](https://github.com/g-truc/glm): OpenGL Mathematics (GLM), `1.0.1`
 - [FMT](https://github.com/fmtlib/fmt): A modern formatting library, `10.2.1`
+- [FMT](https://github.com/fmtlib/fmt): A modern formatting library, `10.2.1`
 - [VulkanMemoryAllocator](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator): Easy to integrate Vulkan memory allocation library, `3.1.0`
 
 # CMake Graph Visualizer

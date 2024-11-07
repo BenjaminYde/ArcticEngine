@@ -16,6 +16,6 @@ public:
     void Cleanup();
 
 private:
-    std::shared_ptr<VulkanWindow> pVulkanWindow;
-    std::unique_ptr<VulkanContext> pVulkanContext;
+    VulkanWindow* pVulkanWindow;
+    VulkanContext* pVulkanContext;
 };

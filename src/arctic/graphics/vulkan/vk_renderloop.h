@@ -65,7 +65,7 @@ private:
         void* uniformBufferMapped = nullptr;
     };
 
-    std::vector<std::unique_ptr<Frame>> frames;
+    std::vector<Frame*> frames;
 
     bool isSwapChainDirty;
 

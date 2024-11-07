@@ -28,7 +28,7 @@ void VulkanLoader::ReloadSwapChain()
         this->pSwapchain->GetImageViews());
 }
 
-VulkanLoader::VulkanLoader(std::shared_ptr<VulkanWindow> vulkanWindow)
+VulkanLoader::VulkanLoader(const VulkanWindow* vulkanWindow)
 {
     // check validation layers
     if(enableValidationLayers && !vulkanFoundValidationLayers())
@@ -37,7 +37,7 @@ VulkanLoader::VulkanLoader(std::shared_ptr<VulkanWindow> vulkanWindow)
         return;
     }
 
-    vulkanCreateInstance(*vulkanWindow.get());
+    vulkanCreateInstance(*vulkanWindow);
     vulkanLoadDebugMessenger();
 
     vulkanWindow->CreateSurface(vkInstance, vkSurface);

@@ -16,6 +16,11 @@ struct SwapChainData
     uint32_t imageCount;
     VkFormat imageFormat;
     VkExtent2D extent;
+
+    float GetAspect() const
+    {
+        return (float)extent.width/(float)extent.height;
+    }
 };
 
 class VulkanWindow;
@@ -23,7 +28,7 @@ class VulkanWindow;
 class VulkanSwapChain
 {
 public:
-    VulkanSwapChain(const VkDevice& vkDevice, const VkPhysicalDevice& vkPhysicalDevice, const VkSurfaceKHR& vkSurface, const std::shared_ptr<VulkanWindow>& window);
+    VulkanSwapChain(const VkDevice& vkDevice, const VkPhysicalDevice& vkPhysicalDevice, const VkSurfaceKHR& vkSurface, const VulkanWindow* window);
     void CleanUp();
 
     SwapChainDeviceSupport QuerySwapChainSupport(const VkPhysicalDevice &device, const VkSurfaceKHR &vkSurface) const;
@@ -45,7 +50,7 @@ private:
     SwapChainData swapChainData;
     VkSurfaceKHR vkSurface;
     VkSwapchainKHR vkSwapChain;
-    std::shared_ptr<VulkanWindow> window;
+    const VulkanWindow* pWindow;
 
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;

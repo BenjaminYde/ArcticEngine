@@ -8,9 +8,9 @@
 #define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.h"
 
-VulkanContext::VulkanContext(std::shared_ptr<VulkanWindow> vulkanWindow)
+VulkanContext::VulkanContext(VulkanWindow* vulkanWindow)
 {
-    pVulkanLoader = std::make_unique<VulkanLoader>(vulkanWindow);
+    pVulkanLoader = new VulkanLoader(vulkanWindow);
 }
 
 VulkanContext::~VulkanContext()
@@ -21,7 +21,7 @@ void VulkanContext::Cleanup()
 {
     // cleanup vulkan
     pVulkanLoader->Cleanup();
-    pVulkanLoader.reset();
+    delete pVulkanLoader;
 }
 
 void VulkanContext::Render()

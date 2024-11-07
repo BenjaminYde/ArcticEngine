@@ -15,7 +15,7 @@ class VulkanMemoryHandler;
 class VulkanLoader
 {
 public:
-    VulkanLoader(std::shared_ptr<VulkanWindow> vulkanWindow);
+    VulkanLoader(const VulkanWindow* vulkanWindow);
     void Cleanup();
 
     std::shared_ptr<VulkanRenderLoop> GetRenderLoop();

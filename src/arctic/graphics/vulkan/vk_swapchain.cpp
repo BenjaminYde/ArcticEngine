@@ -3,12 +3,12 @@
 #include <iostream>
 
 
-VulkanSwapChain::VulkanSwapChain(const VkDevice &vkDevice, const VkPhysicalDevice &vkPhysicalDevice, const VkSurfaceKHR &vkSurface, const std::shared_ptr<VulkanWindow>& window)
+VulkanSwapChain::VulkanSwapChain(const VkDevice &vkDevice, const VkPhysicalDevice &vkPhysicalDevice, const VkSurfaceKHR &vkSurface, const VulkanWindow* window)
 :
     vkDevice(vkDevice),
     vkPhysicalDevice(vkPhysicalDevice),
     vkSurface(vkSurface),
-    window(window)
+    pWindow(window)
 {
 }
 
@@ -47,7 +47,7 @@ bool VulkanSwapChain::CreateSwapChain()
     // select best settings from query
     VkSurfaceFormatKHR surfaceFormat = selectSwapChainSurfaceFormat(swapChainSupport.surfaceFormats);
     VkPresentModeKHR presentMode = selectSwapChainPresentMode(swapChainSupport.presentModes);
-    VkExtent2D extent = selectSwapChainExtent(*this->window, swapChainSupport.capabilities);
+    VkExtent2D extent = selectSwapChainExtent(*this->pWindow, swapChainSupport.capabilities);
 
     uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1; // make sure to have al least 2 images
     imageCount = std::clamp(imageCount, static_cast<uint32_t>(1), swapChainSupport.capabilities.maxImageCount);

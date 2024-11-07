@@ -40,7 +40,7 @@ VulkanRenderLoop::VulkanRenderLoop(
     frames.resize(MAX_FRAMES_IN_FLIGHT);
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        this->frames[i] = std::unique_ptr<Frame>(new Frame());
+        this->frames[i] = new Frame();
     } 
         
     // create command pool and buffer
@@ -119,7 +119,7 @@ void VulkanRenderLoop::CleanUp()
         vkFreeMemory(vkDevice, frame->uniformBufferMemory, nullptr);
 
         // destroy frame
-        frame.reset();
+        delete frame;
     }
 
     vkDestroyDescriptorPool(vkDevice, vkDescriptorPool, nullptr);
@@ -424,20 +424,13 @@ bool VulkanRenderLoop::createUniformBuffers()
 void VulkanRenderLoop::updateUniformBuffer(const Frame& frame)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
-
     auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+    float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
     UniformBufferObject ubo{};
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-    auto swapchainData = pSwapchain->GetData();
-    auto swapchainExtent = swapchainData.extent;
-
-    ubo.proj = glm::perspective(glm::radians(45.0f), swapchainExtent.width / (float) swapchainExtent.height, 0.1f, 10.0f);
-
+    ubo.model = glm::rotate(glm::mat4(1), deltaTime * glm::radians(90.0f), glm::vec3(0, 0, 1));
+    ubo.view = glm::lookAt(glm::vec3(1), glm::vec3(0), glm::vec3(0, 0, 1));
+    ubo.proj = glm::perspective(glm::radians(50.0f), pSwapchain->GetData().GetAspect(), 0.001f, 10.0f);
     ubo.proj[1][1] *= -1;
 
     memcpy(frame.uniformBufferMapped, &ubo, sizeof(ubo));
@@ -575,8 +568,7 @@ void VulkanRenderLoop::recordCommandBuffer(const Frame& frame, uint32_t imageInd
 
     // command buffer: bind descriptor sets
     updateUniformBuffer(frame);
-    auto pipelineLayout = pRenderPipeline->GetPipelineLayout();
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &frame.descriptorSet, 0, nullptr);
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pRenderPipeline->GetPipelineLayout(), 0, 1, &frame.descriptorSet, 0, nullptr);
 
     // command buffer: draw
     uint32_t vertexCount = 3;
@@ -645,7 +637,6 @@ void VulkanRenderLoop::createTextureImage()
     // create vulkan buffers
     VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     VkMemoryPropertyFlags memoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
     if(!vkMemoryHandler->CreateBuffer(imageSize, usage, memoryProperties, this->stagingBuffer, this->stagingBufferMemory))
         return;
 

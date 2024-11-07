@@ -16,7 +16,7 @@ class VulkanWindow
 {
 public:
     
-    SDL_Window* GetSDLWindow();
+    SDL_Window& GetSDLWindow();
     std::vector<const char*> GetExtensions() const;
     std::pair<uint32_t,uint32_t> GetFramebufferSize() const;
 
