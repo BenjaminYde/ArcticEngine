@@ -1,7 +1,7 @@
 #include "vk_swapchain.h"
 #include "arctic/graphics/vulkan/vk_window.h"
 #include <iostream>
-
+#include <algorithm>
 
 VulkanSwapChain::VulkanSwapChain(const VkDevice &vkDevice, const VkPhysicalDevice &vkPhysicalDevice, const VkSurfaceKHR &vkSurface, const std::shared_ptr<VulkanWindow>& window)
 :

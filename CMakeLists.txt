@@ -6,10 +6,6 @@ include(FetchContent)
 include(CMakePrintHelpers)
 
 # configure cmake
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(Arctic
@@ -30,8 +26,8 @@ endif()
 
 # check compiler: force use clang (for the moment)
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    if(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 16.0.4)
-        message(FATAL_ERROR "Clang compiler version is smaller then 16.0.4! Current compiler version is ${CMAKE_CXX_COMPILER_VERSION}")
+    if(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 19.1.5)
+        message(FATAL_ERROR "Clang compiler version is smaller then 19.1.5! Current compiler version is ${CMAKE_CXX_COMPILER_VERSION}")
     endif()
 else()
         message(FATAL_ERROR "Project must be compiled using preset! Current compiler is ${CMAKE_CXX_COMPILER_ID}")

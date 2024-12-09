@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 # Development APT packages
 RUN apt -qq update && \
@@ -31,8 +31,8 @@ RUN apt -qq update && \
     apt -qq remove && \
     apt -qq autoremove
 
-# Install CMAKE
-ENV CMAKE_VERSION 3.30.5
+# Install CMake
+ENV CMAKE_VERSION 3.31.2
 RUN apt update && \
     apt -qq install -y --no-install-recommends \
         graphviz \
@@ -44,49 +44,13 @@ RUN apt update && \
     rm cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz
 ENV PATH="/opt/cmake/bin:${PATH}"
 
-# Install VCPKG
-#RUN apt update && \
-#    cd /tmp && \
-#    wget --no-check-certificate https://github.com/microsoft/vcpkg/archive/refs/tags/2023.02.24.tar.gz && \
-#    tar -xzvf 2023.02.24.tar.gz && \
-#    mv vcpkg-2023.02.24 /opt/vcpkg && \
-#    rm 2023.02.24.tar.gz && \
-#    cd /opt/vcpkg && \
-#    ./bootstrap-vcpkg.sh
-#ENV PATH="/opt/vcpkg:${PATH}"
-
-# Download Clang from source
-#ENV CLANG_VERSION 15.0.7
-#RUN apt update && \
-#    cd /tmp && \
-#    curl -LO https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-${CLANG_VERSION}.tar.gz && \
-#    tar -xvf llvmorg-${CLANG_VERSION}.tar.gz && \
-#    rm llvmorg-${CLANG_VERSION}.tar.gz
-
-# Build Clang from source
-#RUN apt update && \
-#    cd /tmp/llvm-project-llvmorg-${CLANG_VERSION} && \
-#    mkdir build && cd build && \
-#    cmake \
-#        -DLLVM_ENABLE_PROJECTS=clang \
-#        -DCMAKE_BUILD_TYPE=Release \
-#        -G "Unix Makefiles" \
-#        ../llvm \
-#        && \
-#    make clang -j $(nproc)
-
-# Install Clang from source
-#RUN cd /tmp/llvm-project-llvmorg-${CLANG_VERSION} && \
-#    mv build /opt/clang-${CLANG_VERSION}
-#ENV PATH="/opt/clang-15.0.7/bin:${PATH}"
-
 # Download and install Clang binaries
-ENV CLANG_VERSION 19.1.2
+ENV CLANG_VERSION 19.1.5
 RUN cd /tmp && \
     curl -L -O https://github.com/llvm/llvm-project/releases/download/llvmorg-${CLANG_VERSION}/LLVM-${CLANG_VERSION}-Linux-X64.tar.xz && \
-    tar -xf LLVM-${CLANG_VERSION}-Linux-X64.tar.xz && \
-    rm      LLVM-${CLANG_VERSION}-Linux-X64.tar.xz
-    
+    tar -xJvf LLVM-${CLANG_VERSION}-Linux-X64.tar.xz && \
+    rm LLVM-${CLANG_VERSION}-Linux-X64.tar.xz
+
 # Install Clang
 RUN cd /tmp && \
     mkdir /opt/LLVM-${CLANG_VERSION} && \
@@ -217,13 +181,13 @@ RUN cd /tmp/SDL2-${SDL_VERSION} && \
 #ENV CMAKE_PREFIX_PATH="/opt/SDL2-${SDL_VERSION}:${CMAKE_PREFIX_PATH}"
 
 # Install RenderDoc
-ENV RENDERDOC_VERSION 1.30
+ENV RENDERDOC_VERSION 1.35
 RUN cd /tmp && \
     curl -L -O https://renderdoc.org/stable/${RENDERDOC_VERSION}/renderdoc_${RENDERDOC_VERSION}.tar.gz \
     && tar -xzf renderdoc_${RENDERDOC_VERSION}.tar.gz -C /opt \
     && rm renderdoc_${RENDERDOC_VERSION}.tar.gz
 ENV PATH="/opt/renderdoc_${RENDERDOC_VERSION}/bin:${PATH}"
-RUN sudo apt-get install libproxy1v5
+RUN sudo apt -qq install -y --no-install-recommends libproxy1v5
 
 # Install RenderDoc extensions
 RUN cd /tmp && \
@@ -231,17 +195,27 @@ RUN cd /tmp && \
     && tar -xzf renderdoc_${RENDERDOC_VERSION}.tar.gz -C /opt \
     && rm renderdoc_${RENDERDOC_VERSION}.tar.gz
 
+# Create User
+RUN deluser --remove-home ubuntu && \
+    useradd --create-home --user-group --groups sudo --uid 1000 developer && \
+    chown -R developer:developer /home/developer && \
+    printf "\developer ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+ENV USER=developer \
+    PATH=/home/developer/.local/bin:$PATH
+USER developer
+WORKDIR /home/developer
+
 # Install ZSH
-RUN sudo apt install -y zsh && \
-    sudo chsh -s /usr/bin/zsh && \
-    # Install oh my zsh
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
-    # configure .zshrc
-    cd ~ && \
+RUN sudo apt update && sudo apt -qq install -y --no-install-recommends \
+        zsh \
+        && \
+    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
+    rm .zshrc && \
     touch .zshrc && \
-    sed -i 's/ZSH_THEME=.*/ZSH_THEME="eastwood"/' .zshrc && \
-    echo "ZSH Installed"
+    echo '\n# ZSH' >> .zshrc && \
+    echo "export ZSH=\"/home/developer/.oh-my-zsh\"" >> .zshrc && \
+    echo "export ZSH_THEME=\"eastwood\"" >> .zshrc && \
+    echo "plugins=(git)" >> .zshrc && \
+    echo "source /home/developer/.oh-my-zsh/oh-my-zsh.sh" >> .zshrc
 
 ENTRYPOINT ["/usr/bin/zsh"]
-
-WORKDIR /home/benjamin

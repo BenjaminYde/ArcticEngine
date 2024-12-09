@@ -6,7 +6,7 @@
                 "${workspaceFolder}/**"
             ],
             "defines": [],
-            "compilerPath": "/opt/LLVM-19.1.2/bin/clang",
+            "compilerPath": "/opt/LLVM-19.1.5/bin/clang",
             "cStandard": "c23",
             "cppStandard": "c++23",
             "intelliSenseMode": "linux-clang-x64",

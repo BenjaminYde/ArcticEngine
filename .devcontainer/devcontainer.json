@@ -2,7 +2,7 @@
 	"name": "ArcticEngine",
 	"dockerComposeFile": "docker-compose.yaml",
 	"service": "devcontainer",
-	"workspaceFolder": "/workspace",
+	"workspaceFolder": "/home/developer/ArcticEngine",
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -13,7 +13,19 @@
 				"mhutchie.git-graph",
 				"vadimcn.vscode-lldb",
 				"marlongerson.jetbrains-icons"
-			]
+			],
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "zsh",
+				"terminal.integrated.profiles.linux": {
+					"Azure Cloud Shell (Bash)": null,
+					"Azure Cloud Shell (PowerShell)": null,
+					"JavaScript Debug Terminal": null,
+					"bash": null,
+					"zsh": {
+						"path": "/usr/bin/zsh"
+					}
+				}
+			}
 		}
 	},
 	"initializeCommand": "xhost +local:"

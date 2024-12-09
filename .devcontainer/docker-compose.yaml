@@ -5,13 +5,18 @@ services:
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
+    user: developer
     volumes:
-      - ..:/workspace
-      - /tmp/.X11-unix:/tmp/.X11-unix
-      - /dev:/dev
+      # workspace
+      - ..:/home/developer/ArcticEngine
+      # host related
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /dev:/dev:rw
     environment:
+      # host related
       - DISPLAY=$DISPLAY
       - XAUTHORITY=$XAUTHORITY
+    runtime: nvidia
     deploy:
       resources:
         reservations:
