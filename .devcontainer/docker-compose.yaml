@@ -5,6 +5,8 @@ services:
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
+      args:
+        USER_UID: ${UID:-1000}
     user: developer
     volumes:
       # workspace
@@ -24,5 +26,5 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-    privileged: true
     network_mode: host
+    privileged: true

@@ -1,7 +1,7 @@
 function(FindPackage_VK_MEM_ALLOC TARGET_NAME)
     FetchContent_Declare(external_vk_mem_alloc
     GIT_REPOSITORY    https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
-    GIT_TAG           v3.1.0)
+    GIT_TAG           v3.3.0)
 
     FetchContent_MakeAvailable(external_vk_mem_alloc)
 

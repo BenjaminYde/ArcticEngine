@@ -2,14 +2,14 @@
   "version": 3,
   "cmakeMinimumRequired": {
     "major": 3,
-    "minor": 30,
-    "patch": 5
+    "minor": 31,
+    "patch": 8
   },
   "configurePresets": [
     {
       "name": "linux-clang-debug",
       "displayName": "clang-debug-x64",
-      "description": "Clang 19.1.5 (x64)",
+      "description": "Clang 20.1.7 (x64)",
       "generator": "Ninja",
       "architecture": {
         "value": "x64",
@@ -21,7 +21,7 @@
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
         "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++",
-        "CMAKE_CXX_COMPILER_VERSION": "19.1.5",
+        "CMAKE_CXX_COMPILER_VERSION": "20.1.7",
         "CMAKE_CXX_STANDARD": "23",
         "CMAKE_CXX_STANDARD_REQUIRED": "ON",
         "CMAKE_CXX_EXTENSIONS": "OFF"
@@ -30,7 +30,7 @@
     {
       "name": "linux-clang-release",
       "displayName": "clang-release-x64",
-      "description": "Clang 19.1.5 (x64)",
+      "description": "Clang 20.1.7 (x64)",
       "generator": "Ninja",
       "architecture": {
         "value": "x64",
@@ -42,7 +42,7 @@
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
         "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++",
-        "CMAKE_CXX_COMPILER_VERSION": "19.1.5",
+        "CMAKE_CXX_COMPILER_VERSION": "20.1.7",
         "CMAKE_CXX_STANDARD": "23",
         "CMAKE_CXX_STANDARD_REQUIRED": "ON",
         "CMAKE_CXX_EXTENSIONS": "OFF"
