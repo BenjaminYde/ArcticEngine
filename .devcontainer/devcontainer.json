@@ -1,18 +1,19 @@
 {
-	"name": "ArcticEngine",
+	"name": "arctic-engine_ubuntu24_x64",
 	"dockerComposeFile": "docker-compose.yaml",
 	"service": "devcontainer",
 	"workspaceFolder": "/home/developer/ArcticEngine",
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"ms-vscode.cpptools-themes",
-				"ms-vscode.cpptools",
-				"franneck94.c-cpp-runner",
 				"ms-vscode.cmake-tools",
 				"mhutchie.git-graph",
-				"vadimcn.vscode-lldb",
-				"marlongerson.jetbrains-icons"
+				"marlongerson.jetbrains-icons",
+				"llvm-vs-code-extensions.vscode-clangd",
+				"llvm-vs-code-extensions.lldb-dap",
+				"xaver.clang-format",
+				"ms-python.python",
+				"chrisdias.vscode-opennewinstance"
 			],
 			"settings": {
 				"terminal.integrated.defaultProfile.linux": "zsh",
@@ -28,5 +29,6 @@
 			}
 		}
 	},
-	"initializeCommand": "xhost +local:"
+	"initializeCommand": ".devcontainer/bootstrap_host.sh",
+	"onCreateCommand": ".devcontainer/bootstrap_container.sh"
 }

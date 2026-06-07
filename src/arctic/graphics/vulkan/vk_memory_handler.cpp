@@ -19,7 +19,7 @@ vkTransferQueue(vkTransferQueue)
     VmaVulkanFunctions vulkanFunctions = {};
     vulkanFunctions.vkGetInstanceProcAddr = &vkGetInstanceProcAddr;
     vulkanFunctions.vkGetDeviceProcAddr = &vkGetDeviceProcAddr;
-    
+
     VmaAllocatorCreateInfo allocatorCreateInfo = {};
     allocatorCreateInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
     allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_3;
@@ -27,7 +27,7 @@ vkTransferQueue(vkTransferQueue)
     allocatorCreateInfo.device = vkDevice;
     allocatorCreateInfo.instance = vkInstance;
     allocatorCreateInfo.pVulkanFunctions = &vulkanFunctions;
-    
+
     vmaCreateAllocator(&allocatorCreateInfo, &vmaAllocator);
 }
 
@@ -37,17 +37,17 @@ void VulkanMemoryHandler::Cleanup()
 }
 
 /// @brief creates a buffer and device memory for the buffer
-/// @param size defines the size of the buffer 
+/// @param size defines the size of the buffer
 /// @param usage defines how the buffer can be used using bit flags (src / dst / vertex / ...)
 /// @param properties defines the memory properties of the buffer
 /// @param buffer reference to the actual buffer
 /// @param bufferMemory reference to the actual memory the buffer will be using
-/// @return 
+/// @return
 bool VulkanMemoryHandler::CreateBuffer(
-    VkDeviceSize size, 
-    VkBufferUsageFlags usage, 
-    VkMemoryPropertyFlags properties, 
-    VkBuffer& buffer, 
+    VkDeviceSize size,
+    VkBufferUsageFlags usage,
+    VkMemoryPropertyFlags properties,
+    VkBuffer& buffer,
     VkDeviceMemory& bufferMemory)
 {
     // create buffer info
@@ -84,7 +84,7 @@ bool VulkanMemoryHandler::CreateBuffer(
         return false;
     }
     allocInfo.memoryTypeIndex = memoryTypeIndex;
-    
+
     // create buffer memory
     result = vkAllocateMemory(this->vkDevice, &allocInfo, nullptr, &bufferMemory);
     if (result != VK_SUCCESS)
@@ -99,12 +99,12 @@ bool VulkanMemoryHandler::CreateBuffer(
 }
 
 /// @brief copies buffer data from source to dest
-/// @param srcBuffer 
-/// @param dstBuffer 
-/// @param size 
+/// @param srcBuffer
+/// @param dstBuffer
+/// @param size
 bool VulkanMemoryHandler::CopyBufferToBuffer(
-    VkBuffer srcBuffer, 
-    VkBuffer dstBuffer, 
+    VkBuffer srcBuffer,
+    VkBuffer dstBuffer,
     VkDeviceSize size,
     VkCommandPool& commandPool)
 {
@@ -155,11 +155,11 @@ bool VulkanMemoryHandler::CopyBufferToBuffer(
     return true;
 }
 
-/// @brief 
+/// @brief
 /// @param typeFilter used to specify the bit field of memory types that are suitable
-/// @param properties 
-/// @param memoryType 
-/// @return 
+/// @param properties
+/// @param memoryType
+/// @return
 bool VulkanMemoryHandler::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, uint32_t& memoryTypeIndex)
 {
     // get memory properties of physical device
@@ -170,12 +170,12 @@ bool VulkanMemoryHandler::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFl
 
     // loop over all properties
     // >> try find matching memorty index
-    for (uint32_t i=0; i < memProperties.memoryTypeCount; i++) 
+    for (uint32_t i=0; i < memProperties.memoryTypeCount; i++)
     {
         // typeFilter: we can find the index of a suitable memory by checking if the corresponding bit is set to 1
-        // 
-        if ((typeFilter & (1 << i)) && 
-            (memProperties.memoryTypes[i].propertyFlags & properties) == properties) 
+        //
+        if ((typeFilter & (1 << i)) &&
+            (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
         {
             memoryTypeIndex = i;
             return true;

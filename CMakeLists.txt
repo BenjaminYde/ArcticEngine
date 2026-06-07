@@ -26,8 +26,8 @@ endif()
 
 # check compiler: force use clang (for the moment)
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    if(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 20.1.7)
-        message(FATAL_ERROR "Clang compiler version is smaller then 20.1.7! Current compiler version is ${CMAKE_CXX_COMPILER_VERSION}")
+    if(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 22.1.7)
+        message(FATAL_ERROR "Clang compiler version is smaller then 22.1.7! Current compiler version is ${CMAKE_CXX_COMPILER_VERSION}")
     endif()
 else()
         message(FATAL_ERROR "Project must be compiled using preset! Current compiler is ${CMAKE_CXX_COMPILER_ID}")
@@ -43,7 +43,6 @@ add_definitions(-DARCTIC_ASSETS_DIR="${CMAKE_CURRENT_LIST_DIR}/assets")
 add_definitions(-DVK_USE_PLATFORM_XCB_KHR)
 add_definitions(-DGLFW_EXPOSE_NATIVE_X11)
 add_compile_options(-Wno-nullability-completeness) # for Vulkan Memory Allocator
-
 
 # add sub directories
 add_subdirectory(external)

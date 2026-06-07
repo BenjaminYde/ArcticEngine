@@ -1,81 +1,59 @@
 {
+    // ----------------------------------------------------------------
+    // Editor
+    // ----------------------------------------------------------------
+    "editor.formatOnSave": true,
+    "editor.rulers": [
+        120
+    ],
+    "cmake.copyCompileCommands": "${workspaceFolder}/compile_commands.json",
+    "files.trimTrailingWhitespace": true,
+    // ----------------------------------------------------------------
+    // CMake — tools extension
+    // ----------------------------------------------------------------
+    "cmake.sourceDirectory": "${workspaceFolder}",
+    "cmake.options.advanced": {
+        "configurePreset": {
+            "statusBarVisibility": "visible",
+            "inheritDefault": "visible"
+        },
+        "build": {
+            "statusBarVisibility": "visible",
+            "inheritDefault": "visible"
+        },
+        "buildPreset": {
+            "statusBarVisibility": "visible",
+            "inheritDefault": "visible"
+        },
+        "debug": {
+            "statusBarVisibility": "visible",
+            "inheritDefault": "visible"
+        }
+    },
+    // ----------------------------------------------------------------
+    // File associations
+    // ----------------------------------------------------------------
     "files.associations": {
-        "algorithm": "cpp",
-        "any": "cpp",
-        "array": "cpp",
-        "atomic": "cpp",
-        "bit": "cpp",
-        "*.tcc": "cpp",
-        "bitset": "cpp",
-        "cctype": "cpp",
-        "chrono": "cpp",
-        "clocale": "cpp",
-        "cmath": "cpp",
-        "codecvt": "cpp",
-        "compare": "cpp",
-        "complex": "cpp",
-        "concepts": "cpp",
-        "condition_variable": "cpp",
-        "csignal": "cpp",
-        "cstdarg": "cpp",
-        "cstddef": "cpp",
-        "cstdint": "cpp",
-        "cstdio": "cpp",
-        "cstdlib": "cpp",
-        "cstring": "cpp",
-        "ctime": "cpp",
-        "cwchar": "cpp",
-        "cwctype": "cpp",
-        "deque": "cpp",
-        "list": "cpp",
-        "map": "cpp",
-        "set": "cpp",
-        "string": "cpp",
-        "unordered_map": "cpp",
-        "unordered_set": "cpp",
-        "vector": "cpp",
-        "exception": "cpp",
-        "functional": "cpp",
-        "iterator": "cpp",
-        "memory": "cpp",
-        "memory_resource": "cpp",
-        "numeric": "cpp",
-        "optional": "cpp",
-        "random": "cpp",
-        "ratio": "cpp",
-        "string_view": "cpp",
-        "system_error": "cpp",
-        "tuple": "cpp",
-        "type_traits": "cpp",
-        "utility": "cpp",
-        "fstream": "cpp",
-        "initializer_list": "cpp",
-        "iomanip": "cpp",
-        "iosfwd": "cpp",
-        "iostream": "cpp",
-        "istream": "cpp",
-        "limits": "cpp",
-        "mutex": "cpp",
-        "new": "cpp",
-        "numbers": "cpp",
-        "ostream": "cpp",
-        "semaphore": "cpp",
-        "shared_mutex": "cpp",
-        "sstream": "cpp",
-        "stdexcept": "cpp",
-        "stop_token": "cpp",
-        "streambuf": "cpp",
-        "thread": "cpp",
-        "cinttypes": "cpp",
-        "typeindex": "cpp",
-        "typeinfo": "cpp",
-        "variant": "cpp",
-        "charconv": "cpp",
-        "source_location": "cpp",
-        "ranges": "cpp",
-        "span": "cpp",
-        "cfenv": "cpp",
-        "expected": "cpp",
-        "format": "cpp"
-    }
+        "*.h": "cpp",
+        "*.cpp": "cpp",
+    },
+    // ----------------------------------------------------------------
+    // Formatting
+    // ----------------------------------------------------------------
+    "[cpp]": {
+        "editor.defaultFormatter": "xaver.clang-format",
+        "editor.formatOnSave": true
+    },
+    // ----------------------------------------------------------------
+    // Search / watcher exclusions (build artefacts)
+    // ----------------------------------------------------------------
+    "search.exclude": {
+        "**/build/**": true,
+        "**/install/**": true,
+        "**/.cache/**": true
+    },
+    "files.watcherExclude": {
+        "**/build/**": true,
+        "**/install/**": true
+    },
 }

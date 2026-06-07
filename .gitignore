@@ -1,6 +1,7 @@
-# IDE
-*\.idea
+# C++ specific ignores
 *\build
+.cache/*
+compile_commands.json
 
 # Prerequisites
 *.d

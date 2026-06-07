@@ -2,71 +2,55 @@
 
 #include <iostream>
 
-#include <xcb/xcb.h>
 #include <X11/Xlib-xcb.h>
+#include <xcb/xcb.h>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_vulkan.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_vulkan.h>
 
-SDL_Window* VulkanWindow::GetSDLWindow()
-{
+SDL_Window* VulkanWindow::GetSDLWindow() {
     return this->window;
 }
 
-std::vector<const char*> VulkanWindow::GetExtensions() const
-{
-    uint32_t extensionCount = 0;
-    SDL_Vulkan_GetInstanceExtensions(this->window, &extensionCount, nullptr);
-    std::vector<const char*> extensions(extensionCount);
-    SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, extensions.data());
-    return extensions;
+std::vector<const char*> VulkanWindow::GetExtensions() const {
+    uint32_t                 extensionCount = 0;
+    const char* const*       sdlExts        = SDL_Vulkan_GetInstanceExtensions(&extensionCount);
+    std::vector<const char*> instanceExts(sdlExts, sdlExts + extensionCount);
+    return instanceExts;
 }
 
-std::pair<uint32_t, uint32_t> VulkanWindow::GetFramebufferSize() const
-{
+std::pair<uint32_t, uint32_t> VulkanWindow::GetFramebufferSize() const {
     // get window size
-    int windowFrameBufferWidth;
-    int windowFrameBufferHeight;
-    SDL_Vulkan_GetDrawableSize(window, &windowFrameBufferWidth, &windowFrameBufferHeight);
-    return std::make_pair(windowFrameBufferWidth,windowFrameBufferHeight);
+    int windowFrameBufferWidth  = 0;
+    int windowFrameBufferHeight = 0;
+    SDL_GetWindowSize(window, &windowFrameBufferWidth, &windowFrameBufferHeight);
+    return std::make_pair(windowFrameBufferWidth, windowFrameBufferHeight);
 }
 
-void VulkanWindow::CreateWindow()
-{
+void VulkanWindow::CreateWindow() {
     // create SDL window
-    window = SDL_CreateWindow(
-        "Arctic Engine",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        WINDOW_WIDTH, 
-        WINDOW_HEIGHT,
-        SDL_WINDOW_VULKAN | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+    window = SDL_CreateWindow("Arctic Engine", WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 
     // checks if window has been created; if not, exits program
-    if (window == NULL) 
-    {
+    if (!window) {
         std::cout << "SDL failed to initialize: " << SDL_GetError() << std::endl;
     }
-  
+
     // pauses all SDL subsystems for a variable amount of milliseconds
-    //SDL_Delay(100);
+    // SDL_Delay(100);
 }
 
-void VulkanWindow::CreateSurface(const VkInstance& vkInstance, VkSurfaceKHR& vkSurface) const
-{
-    SDL_bool result = SDL_Vulkan_CreateSurface(window, vkInstance, &vkSurface);
-    if(result != SDL_TRUE)
-    {
+void VulkanWindow::CreateSurface(const VkInstance& vkInstance, VkSurfaceKHR& vkSurface) const {
+    if (!SDL_Vulkan_CreateSurface(window, vkInstance, nullptr, &vkSurface)) {
         std::cout << "error: vulkan: failed to create surface!";
         return;
     }
 }
 
-void VulkanWindow::CleanupWindow()
-{
+void VulkanWindow::CleanupWindow() {
     // frees memory
     SDL_DestroyWindow(window);
-  
+
     // Shuts down all SDL subsystems
-    SDL_Quit(); 
+    SDL_Quit();
 }

@@ -14,7 +14,7 @@ set(SRC_DIR ${CMAKE_CURRENT_LIST_DIR})
 
 # set properties
 set_target_properties(
-        ${TARGET} 
+        ${TARGET}
         PROPERTIES
         INCLUDE_DIR ${INCLUDE_DIR}
 )
@@ -22,7 +22,7 @@ set_target_properties(
 # set sources
 target_sources(${TARGET}
         PRIVATE
-        ${SRC_DIR}/vk_context.cpp 
+        ${SRC_DIR}/vk_context.cpp
         ${SRC_DIR}/vk_renderloop.cpp
         ${SRC_DIR}/vk_renderpipeline.cpp
         ${SRC_DIR}/vk_swapchain.cpp
@@ -43,7 +43,6 @@ target_include_directories(
 FindPackage_Vulkan(${TARGET})
 FindPackage_SDL(${TARGET})
 FindPackage_GLM(${TARGET})
-FindPackage_FMT(${TARGET})
 FindPackage_STB(${TARGET})
 FindPackage_VK_MEM_ALLOC(${TARGET})
 
@@ -53,28 +52,28 @@ target_link_libraries(${TARGET} PRIVATE X11::X11_xcb)
 
 # add module: utilities
 target_link_libraries(
-        ${TARGET} 
-        PRIVATE 
-        Utilities 
+        ${TARGET}
+        PRIVATE
+        Utilities
         X11::X11_xcb
 )
 
 get_target_property(
         Utilties_INCLUDE_DIR
-        Utilities 
+        Utilities
         INCLUDE_DIR
 )
 
 target_include_directories(
-        ${TARGET} 
-        PRIVATE 
+        ${TARGET}
+        PRIVATE
         ${Utilties_INCLUDE_DIR}
 )
 
 # add module: arctic graphics rhi
 target_link_libraries(
-        ${TARGET} 
-        PRIVATE 
+        ${TARGET}
+        PRIVATE
         ARCTIC_GRAPHICS_RHI
 )
 
@@ -85,7 +84,7 @@ get_target_property(
 )
 
 target_include_directories(
-        ${TARGET} 
-        PRIVATE 
+        ${TARGET}
+        PRIVATE
         ${ARCTIC_GRAPHICS_RHI_INCLUDE_DIR}
 )

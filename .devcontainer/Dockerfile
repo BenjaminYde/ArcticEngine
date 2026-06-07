@@ -1,71 +1,144 @@
+# UBUNTU BASE
 FROM ubuntu:24.04
+ENV DEBIAN_FRONTEND=noninteractive
+ARG DEVELOPER_UID=1000
+LABEL Author="BenjaminYde"
 
-RUN apt -qq update && \
+# -------------------------------------------------------------------------
+# Enable APT cache persistence for BuildKit cache mounts
+# -------------------------------------------------------------------------
+#
+# Docker's official Ubuntu images ship with /etc/apt/apt.conf.d/docker-clean,
+# a hook that deletes all downloaded .deb files from /var/cache/apt after every
+# apt-get install. This is good for keeping image layers small in normal builds,
+# but it defeats the purpose of --mount=type=cache,target=/var/cache/apt:
+# the cache mount would persist an empty directory every time.
+#
+# What we do here:
+#   1. Remove docker-clean           → stops apt from wiping .deb files
+#   2. Set Keep-Downloaded-Packages  → explicitly tells apt to retain them
+#
+# After this, the two cache mounts used throughout this Dockerfile work as
+# intended:
+#   /var/lib/apt/lists  — caches the package index  (works without this fix)
+#   /var/cache/apt      — caches downloaded .deb's  (NEEDS this fix)
+#
+# The result: only new or updated packages are downloaded on rebuild.
+RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
+    echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' \
+    > /etc/apt/apt.conf.d/keep-cache
+
+# ---------------------------------------------------------------------------
+# Install APT packages
+# ---------------------------------------------------------------------------
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt -qq update && \
     apt -qq install -y --no-install-recommends \
+        # general
+        apt-utils \
+        lsb-release \
+        # git
+        git \
+        git-lfs \
+        # files & io
+        parallel \
+        rsync \
+        unzip \
+        tree \
+        # networking & remote
+        curl \
+        openssh-client \
+        ssh \
+        wget \
+        xdg-utils \
+        # cpp
+        build-essential \
+        ccache \
         autoconf \
         automake \
-        build-essential \
-        ca-certificates \
-        curl \
         dos2unix \
         g++ \
         gcc \
         gdb \
-        git \
-        locales-all \
         make \
-        nano \
-        net-tools \
         ninja-build \
-        python3 \
-        rsync \
-        ssh \
+        software-properties-common \
+        # permissions
         sudo \
-        tar \
-        unzip \
-        wget \
-        zip \
-        && \
-    apt -qq clean && \
-    apt -qq autoclean && \
-    apt -qq remove && \
-    apt -qq autoremove && \
-    rm -rf /var/lib/apt/lists
+        gnupg \
+        ca-certificates \
+        # terminal
+        bash-completion \
+        nano \
+        zsh
 
-# Install CMake
-ENV CMAKE_VERSION 3.31.8
-RUN apt update && \
-    apt -qq install -y --no-install-recommends \
-        graphviz \
-    && \
+# ---------------------------------------------------------------------------
+# Install CMake - cross-platform build system generator
+# ---------------------------------------------------------------------------
+ENV CMAKE_VERSION 4.3.3
+RUN \
+    # Install CMake
     cd /tmp && \
     wget --no-check-certificate https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz && \
     tar -xzvf cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz && \
     mv cmake-${CMAKE_VERSION}-linux-x86_64 /opt/cmake && \
-    rm cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz
+    rm cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz && \
+    # Install CMake Tools
+    apt update && \
+    apt -qq install -y --no-install-recommends \
+        graphviz
 ENV PATH="/opt/cmake/bin:${PATH}"
 
-# Download and install Clang binaries
-ENV CLANG_VERSION 20.1.7
-RUN cd /tmp && \
-    curl -L -O https://github.com/llvm/llvm-project/releases/download/llvmorg-${CLANG_VERSION}/LLVM-${CLANG_VERSION}-Linux-X64.tar.xz && \
-    tar -xJvf LLVM-${CLANG_VERSION}-Linux-X64.tar.xz && \
-    rm LLVM-${CLANG_VERSION}-Linux-X64.tar.xz
+# ---------------------------------------------------------------------------
+# Install Clang - C/C++ compiler, linker and tools (clangd, clang-format, clang-tidy)
+# ---------------------------------------------------------------------------
+# Install Clang APT Packages
+# Checkout the website: https://llvm.org/
+# Checkout the website: https://apt.llvm.org/
+# Checkout the website: https://apt.llvm.org/noble/pool/main/l/llvm-toolchain-22/
+ENV CLANG_MAJOR_VERSION="22"
+RUN \
+    # Download and add the official LLVM GPG key
+    wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
+    # # Add the LLVM repository
+    echo "deb http://apt.llvm.org/$(lsb_release -sc)/ llvm-toolchain-$(lsb_release -sc)-${CLANG_MAJOR_VERSION} main" > /etc/apt/sources.list.d/llvm-${CLANG_MAJOR_VERSION}.list && \
+    # Install APT packages
+    # - clang-XX: The C/C++ compiler
+    # - lld-XX: The fast linker
+    # - libc++-XX-dev: The C++ standard library headers
+    # - libc++abi-XX-dev: The C++ ABI library headers
+    apt update && apt install -y --no-install-recommends \
+        clang-${CLANG_MAJOR_VERSION} \
+        lld-${CLANG_MAJOR_VERSION} \
+        libc++-${CLANG_MAJOR_VERSION}-dev \
+        libc++abi-${CLANG_MAJOR_VERSION}-dev \
+        clang-tools-${CLANG_MAJOR_VERSION} \
+        clang-${CLANG_MAJOR_VERSION}-doc \
+        libclang-common-${CLANG_MAJOR_VERSION}-dev \
+        libclang-${CLANG_MAJOR_VERSION}-dev \
+        clang-format-${CLANG_MAJOR_VERSION}  \
+        libclang1-${CLANG_MAJOR_VERSION} \
+        clangd-${CLANG_MAJOR_VERSION} \
+        clang-tidy-${CLANG_MAJOR_VERSION} \
+    && \
+    # Create symlinks so you can just run `clang++`
+ln -s /usr/bin/clang-${CLANG_MAJOR_VERSION} /usr/bin/clang && \
+    ln -s /usr/bin/clang++-${CLANG_MAJOR_VERSION} /usr/bin/clang++ && \
+    ln -s /usr/bin/clangd-${CLANG_MAJOR_VERSION} /usr/bin/clangd && \
+    ln -s /usr/bin/clang-format-${CLANG_MAJOR_VERSION} /usr/bin/clang-format && \
+    ln -s /usr/bin/clang-tidy-${CLANG_MAJOR_VERSION} /usr/bin/clang-tidy
 
-# Install Clang
-RUN cd /tmp && \
-    mkdir /opt/LLVM-${CLANG_VERSION} && \
-    mv LLVM-${CLANG_VERSION}-Linux-X64/* /opt/LLVM-${CLANG_VERSION}
-ENV PATH="/opt/LLVM-${CLANG_VERSION}/bin:${PATH}"
-
-# Download and extract the LunarG Vulkan SDK
-ENV VULKAN_SDK_VERSION 1.3.290.0
+# ---------------------------------------------------------------------------
+# LunarG Vulkan SDK
+# ---------------------------------------------------------------------------
+ENV VULKAN_SDK_VERSION 1.4.350.1
 RUN cd /tmp && \
     curl -L -O https://sdk.lunarg.com/sdk/download/${VULKAN_SDK_VERSION}/linux/vulkansdk-linux-x86_64-${VULKAN_SDK_VERSION}.tar.xz && \
     tar xJf vulkansdk-linux-x86_64-${VULKAN_SDK_VERSION}.tar.xz && \
     rm vulkansdk-linux-x86_64-${VULKAN_SDK_VERSION}.tar.xz && \
     mv ${VULKAN_SDK_VERSION} /opt/vulkansdk-${VULKAN_SDK_VERSION}
-    
+
 # Setup Vulkan SDK environment variables
 ENV VULKAN_SDK="/opt/vulkansdk-${VULKAN_SDK_VERSION}/x86_64"
 ENV PATH="${VULKAN_SDK}/bin:$PATH"
@@ -83,19 +156,24 @@ RUN mkdir -p $(dirname ${VK_ICD_FILENAMES}) && \
     "file_format_version": "1.0.0",
     "ICD": {
         "library_path": "libGLX_nvidia.so.0",
-        "api_version": "1.4.313"
+        "api_version": "1.4.350"
     }
 }
 EOF
 
-# Install APT dependencies for rendering
-RUN apt-get update && apt-get install -y --install-recommends \
+# X11 / rendering system libraries
+# ---------------------------------------------------------------------------
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get -qq update && \
+    apt-get -qq install -y --no-install-recommends \
     # vulkan
     libvulkan1 \
     mesa-vulkan-drivers \
     vulkan-tools \
+    libvulkan-dev \
     # open gl
-    libegl1-mesa-dev \    
+    libegl1-mesa-dev \
     libgl1-mesa-dev \
     libgles2-mesa-dev \
     # x11 general
@@ -134,56 +212,86 @@ RUN apt-get update && apt-get install -y --install-recommends \
     libwebp-dev \
     libxext-dev
 
-# Download SDL source code
-ENV SDL_VERSION 2.32.8
+# ---------------------------------------------------------------------------
+# SDL3 — windowing and input
+# ---------------------------------------------------------------------------
+ENV SDL_VERSION=3.4.8
+ENV SDL_DIR=/opt/sdl3-${SDL_VERSION}
+
 RUN cd /tmp && \
-    wget --no-check-certificate https://github.com/libsdl-org/SDL/archive/refs/tags/release-${SDL_VERSION}.tar.gz -O SDL-${SDL_VERSION}.tar.gz && \
-    tar -xzvf SDL-${SDL_VERSION}.tar.gz && \
-    rm SDL-${SDL_VERSION}.tar.gz 
+    # download
+    wget -q \
+        https://github.com/libsdl-org/SDL/archive/refs/tags/release-${SDL_VERSION}.tar.gz \
+        -O SDL-${SDL_VERSION}.tar.gz && \
+    tar -xzf SDL-${SDL_VERSION}.tar.gz && \
+    rm SDL-${SDL_VERSION}.tar.gz && \
+    # cmake configure
+    cmake \
+        -S SDL-release-${SDL_VERSION} \
+        -B SDL-release-${SDL_VERSION}/build \
+        -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_C_COMPILER=clang-22 \
+        -DCMAKE_CXX_COMPILER=clang++-22 \
+        -DCMAKE_INSTALL_PREFIX=${SDL_DIR} \
+        -DSDL_SHARED=ON \
+        -DSDL_STATIC=ON \
+        -DSDL_VULKAN=ON \
+        -DSDL_WAYLAND=ON \
+        -DSDL_X11=ON \
+        -DSDL_X11_XTEST=OFF \
+        -DSDL_TEST_LIBRARY=OFF && \
+    # cmake build
+    cmake --build   SDL-release-${SDL_VERSION}/build -j$(nproc) && \
+    # cmake install
+    cmake --install SDL-release-${SDL_VERSION}/build && \
+    # cleanups
+    rm -rf /tmp/SDL-release-${SDL_VERSION}
 
-# Build and install SDL from source
-RUN cd /tmp/SDL-release-${SDL_VERSION} && \
-    # build
-    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && \
-    cmake --build build && \
-    # install
-    mkdir -p /opt/SDL-${SDL_VERSION} && \
-    cmake --install build --prefix /opt/SDL-${SDL_VERSION}
-ENV CMAKE_PREFIX_PATH="/opt/SDL-${SDL_VERSION}:${CMAKE_PREFIX_PATH}"
+ENV CMAKE_PREFIX_PATH="${SDL_DIR}:${CMAKE_PREFIX_PATH}"
+ENV PKG_CONFIG_PATH="${SDL_DIR}/lib/pkgconfig:${SDL_DIR}/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+ENV LD_LIBRARY_PATH="${SDL_DIR}/lib:${SDL_DIR}/lib64:${LD_LIBRARY_PATH}"
 
-# Install RenderDoc
-ENV RENDERDOC_VERSION 1.39
+# ---------------------------------------------------------------------------
+# RenderDoc — graphics debugger
+# ---------------------------------------------------------------------------
+ENV RENDERDOC_VERSION 1.44
+ENV RENDERDOC_DIR=/opt/renderdoc-${RENDERDOC_VERSION}
 RUN cd /tmp && \
-    curl -L -O https://renderdoc.org/stable/${RENDERDOC_VERSION}/renderdoc_${RENDERDOC_VERSION}.tar.gz \
-    && tar -xzf renderdoc_${RENDERDOC_VERSION}.tar.gz -C /opt \
-    && rm renderdoc_${RENDERDOC_VERSION}.tar.gz
-ENV PATH="/opt/renderdoc_${RENDERDOC_VERSION}/bin:${PATH}"
-RUN sudo apt -qq install -y --no-install-recommends libproxy1v5
+    # download and install
+    curl -fsSL -O \
+        https://renderdoc.org/stable/${RENDERDOC_VERSION}/renderdoc_${RENDERDOC_VERSION}.tar.gz && \
+    tar -xzf renderdoc_${RENDERDOC_VERSION}.tar.gz -C /opt && \
+    mv /opt/renderdoc_${RENDERDOC_VERSION} ${RENDERDOC_DIR} && \
+    rm renderdoc_${RENDERDOC_VERSION}.tar.gz && \
+    # dependencies
+    apt-get -qq update && \
+    apt-get -qq install -y --no-install-recommends libproxy1v5 && \
+    # cleanups
+    apt-get -qq clean && rm -rf /var/lib/apt/lists/*
 
-# Install RenderDoc extensions
-RUN cd /tmp && \
-    curl -L -O https://renderdoc.org/stable/${RENDERDOC_VERSION}/renderdoc_${RENDERDOC_VERSION}.tar.gz \
-    && tar -xzf renderdoc_${RENDERDOC_VERSION}.tar.gz -C /opt \
-    && rm renderdoc_${RENDERDOC_VERSION}.tar.gz
-
-# Create User
-ARG USER_UID=1000
+# ---------------------------------------------------------------------------
+# Ubuntu User
+# ---------------------------------------------------------------------------
+ARG DEVELOPER_UID=1000
 RUN deluser --remove-home ubuntu && \
-    useradd --create-home --user-group --groups sudo --uid ${USER_UID} developer && \
-    chown -R developer:developer /home/developer
-ENV USER=developer
-WORKDIR /home/developer
+useradd --create-home --user-group --groups sudo --uid ${DEVELOPER_UID} developer && \
+printf "\ndeveloper ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+USER developer
+ENV USER="developer" HOME="/home/developer"
+WORKDIR $HOME
 
-# Install ZSH
-RUN sudo apt update && sudo apt -qq install -y --no-install-recommends \
-        zsh \
-        && \
-    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
+# ---------------------------------------------------------------------------
+# ZSH + Oh My Zsh - terminal and shell configuration framework
+# ---------------------------------------------------------------------------
+RUN sudo apt install -y zsh && \
+    sudo chsh -s /usr/bin/zsh && \
+    # Install oh my zsh
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
+    # configure .zshrc
+    cd ~ && \
     touch .zshrc && \
-    echo '\n# ZSH' >> .zshrc && \
-    echo "export ZSH=\"/home/developer/.oh-my-zsh\"" >> .zshrc && \
-    echo "export ZSH_THEME=\"eastwood\"" >> .zshrc && \
-    echo "plugins=(git)" >> .zshrc && \
-    echo "source /home/developer/.oh-my-zsh/oh-my-zsh.sh" >> .zshrc
+    sed -i 's/ZSH_THEME=.*/ZSH_THEME="eastwood"/' .zshrc && \
+    echo "ZSH Installed"
 
 ENTRYPOINT ["/usr/bin/zsh"]

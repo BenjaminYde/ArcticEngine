@@ -2,19 +2,22 @@
 
 Development Environment:
 
-- Linux, Ubuntu 22.04
-- LLVM Clang 19.1.2
-- CMake 3.30.5
-- C++ 23
+- Linux, Ubuntu 24.04
 - VS Code using Dev Containers (Docker)
+- CMake 4.3.2
+- LLVM Clang 22.1.7
+- C++ 23
+- ClangD
+- Clang Format
+- Clang Tidy
+- RenderDoc 1.44
 
-Libraries used: 
+Libraries used:
 
-- [Vulkan](https://www.lunarg.com/vulkan-sdk/): a new generation graphics and compute API that provides high-efficiency, cross-platform access to modern graphics processing units (GPUs), `1.3.290.0`
-- [SDL](https://github.com/libsdl-org/SDL): Simple Directmedia Layer (low level access to audio, keyboard, mouse, joystick, and graphics hardware),  `2.30.8`
-- [GLM](https://github.com/g-truc/glm): OpenGL Mathematics (GLM), `1.0.1`
-- [FMT](https://github.com/fmtlib/fmt): A modern formatting library, `10.2.1`
-- [VulkanMemoryAllocator](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator): Easy to integrate Vulkan memory allocation library, `3.1.0`
+- [Vulkan](https://www.lunarg.com/vulkan-sdk/): a new generation graphics and compute API that provides high-efficiency, cross-platform access to modern graphics processing units (GPUs), `1.4.350.1`
+- [SDL](https://github.com/libsdl-org/SDL): Simple Directmedia Layer (low level access to audio, keyboard, mouse, joystick, and graphics hardware),  `3.4.8`
+- [GLM](https://github.com/g-truc/glm): OpenGL Mathematics (GLM), `1.0.3`
+- [VulkanMemoryAllocator](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator): Easy to integrate Vulkan memory allocation library, `3.4.0`
 
 # CMake Graph Visualizer
 
@@ -22,7 +25,7 @@ Use `graphviz` to visualize the dependency graph:
 
 1. Navigate to your build directory
 1. Run CMake with the --graphviz option
-    - This will generate a graph.dot file in your build directory 
+    - This will generate a graph.dot file in your build directory
 1. Use dot (included in graphviz) to generate an image from the .dot file:
     - This will generate a graph.png image file in your build directory.
 
@@ -48,7 +51,7 @@ vkvia
 
 # Renderdoc
 
-1. Open the terminal 
+1. Open the terminal
 1. Enter the following command to open renderdoc:
     ```bash
     qrenderdoc
@@ -67,7 +70,7 @@ To use glsc, execute the following command format:
 glslc <path_to_shader> -o <path_of_build>
 ```
 
-For example: 
+For example:
 
 ```bash
 glslc shader.vert -o vert.spv
