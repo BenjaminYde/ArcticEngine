@@ -1,0 +1,20 @@
+CompileFlags:
+  CompilationDatabase: .
+  Add:
+    - "-std=c++23"
+    - "-stdlib=libc++"
+
+Index:
+  Background: Build
+
+Diagnostics:
+  ClangTidy: {} # use .clang-tidy as the sole source of truth
+
+InlayHints:
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes
+  Designators: Yes
+
+Hover:
+  ShowAKA: Yes
