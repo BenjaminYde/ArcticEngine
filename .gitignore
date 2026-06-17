@@ -1,6 +1,6 @@
 # C++ specific ignores
-*\build
-.cache/*
+build
+.cache
 compile_commands.json
 
 # Prerequisites
