@@ -3,8 +3,7 @@ function(FindPackage_Vulkan TARGET_NAME)
     # found SDK
     #message("Path VULKAN_SDK = $ENV{VULKAN_SDK}")
     find_package(Vulkan REQUIRED)
-    message("Vulkan FOUND = ${Vulkan_FOUND}")
-
+    message(STATUS "Vulkan FOUND: ${Vulkan_VERSION}")
     add_library(VulkanHppModule)
     target_sources(VulkanHppModule PUBLIC
         FILE_SET CXX_MODULES

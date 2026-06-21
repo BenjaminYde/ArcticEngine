@@ -19,7 +19,7 @@
                 "CMAKE_CXX_STANDARD": "23",
                 "CMAKE_CXX_STANDARD_REQUIRED": "ON",
                 "CMAKE_CXX_EXTENSIONS": "OFF",
-                "CMAKE_CXX_FLAGS": "-stdlib=libc++",
+                "CMAKE_CXX_FLAGS": "-stdlib=libc++ -DUSE_CPP20_MODULES",
                 "CMAKE_C_COMPILER_LAUNCHER": "ccache",
                 "CMAKE_CXX_COMPILER_LAUNCHER": "ccache",
                 "CMAKE_CXX_MODULE_STD": "ON",

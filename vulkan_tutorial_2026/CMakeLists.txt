@@ -18,14 +18,12 @@ set(TARGET_NAME ArcticEngine)
 project(${TARGET_NAME}
         LANGUAGES "CXX")
 
-# c++ flags
-add_compile_options(-Wshadow)
-
 # create target
 add_executable(${TARGET_NAME})
 
 # add packges
 FindPackage_Vulkan(${TARGET_NAME})
+FindPackage_SDL(${TARGET_NAME})
 
 
 # set sources
