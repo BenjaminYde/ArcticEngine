@@ -8,6 +8,9 @@ set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE INTERNAL "")
 include(FetchContent)
 include(CMakePrintHelpers)
 
+# external dependencies
+add_subdirectory(external)
+
 # set variables
 set(TARGET_NAME ArcticEngine)
 
@@ -21,7 +24,11 @@ add_compile_options(-Wshadow)
 # create target
 add_executable(${TARGET_NAME})
 
+# add packges
+FindPackage_Vulkan(${TARGET_NAME})
+
+
 # set sources
-target_sources(${TARGET_NAME} 
-        PRIVATE 
+target_sources(${TARGET_NAME}
+        PRIVATE
         src/main.cpp)
