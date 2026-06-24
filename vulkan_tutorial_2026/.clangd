@@ -18,3 +18,9 @@ InlayHints:
 
 Hover:
   ShowAKA: Yes
+
+---
+If:
+  PathMatch: .*/opt/vulkansdk.*
+Diagnostics:
+  Suppress: '*'
