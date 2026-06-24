@@ -143,7 +143,7 @@ RUN cd /tmp && \
 ENV VULKAN_SDK="/opt/vulkansdk-${VULKAN_SDK_VERSION}/x86_64"
 ENV PATH="${VULKAN_SDK}/bin:$PATH"
 ENV LD_LIBRARY_PATH="${VULKAN_SDK}/lib:$LD_LIBRARY_PATH"
-ENV VK_LAYER_PATH="${VULKAN_SDK}/etc/vulkan/explicit_layer.d"
+ENV VK_LAYER_PATH="${VULKAN_SDK}/share/vulkan/explicit_layer.d"
 
 # Set environment variables for NVIDIA and Vulkan
 ENV NVIDIA_VISIBLE_DEVICES all
