@@ -60,6 +60,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         dos2unix \
         g++ \
         gcc \
+        gcc-14 \
+        g++-14 \
+        libstdc++-14-dev \
         gdb \
         make \
         ninja-build \
@@ -74,9 +77,22 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         zsh
 
 # ---------------------------------------------------------------------------
+# Configure GCC & G++ Compilers
+# ---------------------------------------------------------------------------
+RUN \ 
+    # Register both versions
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 13 && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 14 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-13 13 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 14 && \
+    # Set 14 as default
+    update-alternatives --set gcc /usr/bin/gcc-14 && \
+    update-alternatives --set g++ /usr/bin/g++-14
+
+# ---------------------------------------------------------------------------
 # Install CMake - cross-platform build system generator
 # ---------------------------------------------------------------------------
-ENV CMAKE_VERSION 4.3.3
+ENV CMAKE_VERSION=4.3.3
 RUN \
     # Install CMake
     cd /tmp && \
@@ -97,7 +113,7 @@ ENV PATH="/opt/cmake/bin:${PATH}"
 # Checkout the website: https://llvm.org/
 # Checkout the website: https://apt.llvm.org/
 # Checkout the website: https://apt.llvm.org/noble/pool/main/l/llvm-toolchain-22/
-ENV CLANG_MAJOR_VERSION="22"
+ENV CLANG_MAJOR_VERSION=22
 RUN \
     # Download and add the official LLVM GPG key
     wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
@@ -111,6 +127,7 @@ RUN \
     apt update && apt install -y --no-install-recommends \
         clang-${CLANG_MAJOR_VERSION} \
         lld-${CLANG_MAJOR_VERSION} \
+        lldb-${CLANG_MAJOR_VERSION} \
         libc++-${CLANG_MAJOR_VERSION}-dev \
         libc++abi-${CLANG_MAJOR_VERSION}-dev \
         clang-tools-${CLANG_MAJOR_VERSION} \
@@ -127,20 +144,24 @@ ln -s /usr/bin/clang-${CLANG_MAJOR_VERSION} /usr/bin/clang && \
     ln -s /usr/bin/clang++-${CLANG_MAJOR_VERSION} /usr/bin/clang++ && \
     ln -s /usr/bin/clangd-${CLANG_MAJOR_VERSION} /usr/bin/clangd && \
     ln -s /usr/bin/clang-format-${CLANG_MAJOR_VERSION} /usr/bin/clang-format && \
-    ln -s /usr/bin/clang-tidy-${CLANG_MAJOR_VERSION} /usr/bin/clang-tidy
+    ln -s /usr/bin/clang-tidy-${CLANG_MAJOR_VERSION} /usr/bin/clang-tidy && \
+    ln -s /usr/bin/lldb-${CLANG_MAJOR_VERSION} /usr/bin/lldb && \
+    ln -s /usr/bin/lldb-dap-${CLANG_MAJOR_VERSION} /usr/bin/lldb-dap
 
 # ---------------------------------------------------------------------------
 # LunarG Vulkan SDK
 # ---------------------------------------------------------------------------
-ENV VULKAN_SDK_VERSION 1.4.350.1
+ENV VULKAN_SDK_VERSION=1.4.350.1
+ENV VULKAN_INSTALL_DIR=/opt/vulkansdk
 RUN cd /tmp && \
-    curl -L -O https://sdk.lunarg.com/sdk/download/${VULKAN_SDK_VERSION}/linux/vulkansdk-linux-x86_64-${VULKAN_SDK_VERSION}.tar.xz && \
-    tar xJf vulkansdk-linux-x86_64-${VULKAN_SDK_VERSION}.tar.xz && \
-    rm vulkansdk-linux-x86_64-${VULKAN_SDK_VERSION}.tar.xz && \
-    mv ${VULKAN_SDK_VERSION} /opt/vulkansdk-${VULKAN_SDK_VERSION}
+    curl -fL -O https://sdk.lunarg.com/sdk/download/${VULKAN_SDK_VERSION}/linux/vulkansdk-linux-x86_64-${VULKAN_SDK_VERSION}.tar.xz && \
+    tar xvf vulkansdk-linux-x86_64-${VULKAN_SDK_VERSION}.tar.xz && \
+    mkdir -p ${VULKAN_INSTALL_DIR} && \
+    cp -r ${VULKAN_SDK_VERSION}/x86_64/* ${VULKAN_INSTALL_DIR} && \
+    rm -rf /tmp/*
 
-# Setup Vulkan SDK environment variables
-ENV VULKAN_SDK="/opt/vulkansdk-${VULKAN_SDK_VERSION}/x86_64"
+# Setup environment variables
+ENV VULKAN_SDK="/opt/vulkansdk"
 ENV PATH="${VULKAN_SDK}/bin:$PATH"
 ENV LD_LIBRARY_PATH="${VULKAN_SDK}/lib:$LD_LIBRARY_PATH"
 ENV VK_LAYER_PATH="${VULKAN_SDK}/share/vulkan/explicit_layer.d"
@@ -172,6 +193,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     mesa-vulkan-drivers \
     vulkan-tools \
     libvulkan-dev \
+    libshaderc-dev \
     # open gl
     libegl1-mesa-dev \
     libgl1-mesa-dev \

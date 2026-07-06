@@ -28,14 +28,36 @@
         "debug": {
             "statusBarVisibility": "visible",
             "inheritDefault": "visible"
+        },
+        "ctest": {
+            "statusBarVisibility": "compact",
+        },
+        "launchTarget": {
+            "statusBarVisibility": "compact"
+        },
+        "launch": {
+            "statusBarVisibility": "visible"
         }
     },
+    "cmake.ctest.testExplorerIntegrationEnabled": true,
+    "cmake.debugConfig": {
+        "type": "lldb-dap",
+        "request": "launch",
+        "console": "integratedTerminal",
+        "initCommands": [
+            "settings set symbols.enable-external-lookup false"
+        ]
+    },
+    "cmake.ctest.allowParallelJobs": true,
+    "lldb-dap.executable-path": "/usr/bin/lldb-dap-22",
     // ----------------------------------------------------------------
     // File associations
     // ----------------------------------------------------------------
     "files.associations": {
         "*.h": "cpp",
         "*.cpp": "cpp",
+        ".clang-tidy": "yaml",
+        ".clang-format": "yaml"
     },
     // ----------------------------------------------------------------
     // Formatting
@@ -56,4 +78,8 @@
         "**/build/**": true,
         "**/install/**": true
     },
+    // ----------------------------------------------------------------
+    // Intellisense
+    // ----------------------------------------------------------------
+    "C_Cpp.intelliSenseEngine": "disabled"
 }

@@ -13,7 +13,8 @@
 				"llvm-vs-code-extensions.lldb-dap",
 				"xaver.clang-format",
 				"ms-python.python",
-				"chrisdias.vscode-opennewinstance"
+				"chrisdias.vscode-opennewinstance",
+				"NarasimaPandiyan.jetbrainsmono"
 			],
 			"settings": {
 				"terminal.integrated.defaultProfile.linux": "zsh",

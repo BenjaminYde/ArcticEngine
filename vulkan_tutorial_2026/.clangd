@@ -1,14 +1,13 @@
 CompileFlags:
   CompilationDatabase: .
   Add:
-    - "-std=c++23"
-    - "-stdlib=libc++"
+    - -std=c++23
 
 Index:
   Background: Build
 
 Diagnostics:
-  ClangTidy: {} # use .clang-tidy as the sole source of truth
+  ClangTidy: {}
 
 InlayHints:
   Enabled: Yes
@@ -21,6 +20,12 @@ Hover:
 
 ---
 If:
-  PathMatch: .*/opt/vulkansdk.*
+  PathMatch: .*/opt/vulkansdk/.*
+Diagnostics:
+  Suppress: '*'
+
+---
+If:
+  PathMatch: .*/libc\+\+/.*
 Diagnostics:
   Suppress: '*'

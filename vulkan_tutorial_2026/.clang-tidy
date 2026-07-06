@@ -1,5 +1,9 @@
+# .clang-tidy
+# C++ Core Guidelines: https://isocpp.github.io/CppCoreGuidelines
+
 Checks: >
-  clang-analyzer-*,
+
+  # C++ Core Guidelines
   cppcoreguidelines-*,
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,
   -cppcoreguidelines-pro-type-vararg,
@@ -7,10 +11,13 @@ Checks: >
   -cppcoreguidelines-owning-memory,
   -cppcoreguidelines-avoid-magic-numbers,
   -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
-  clang-diagnostic-unused-*,
+  -cppcoreguidelines-pro-type-cstyle-cast,
+
+  # Enforce modern C++ patterns
   modernize-*,
   -modernize-use-trailing-return-type,
-  -modernize-use-nodiscard,
+
+  # Readability and consistency
   readability-*,
   -readability-identifier-length,
   -readability-magic-numbers,
@@ -19,38 +26,96 @@ Checks: >
   -readability-uppercase-literal-suffix,
   -readability-implicit-bool-conversion,
   -readability-math-missing-parentheses,
+  -readability-convert-member-functions-to-static,
+
+  # Patterns statistically associated with bugs
   bugprone-*,
   -bugprone-easily-swappable-parameters,
+
+  # Accidental copies, missed moves, inefficient patterns
   performance-*,
+
+  # Misc
   misc-const-correctness,
   misc-unused-parameters,
   misc-unused-alias-decls,
   misc-redundant-expression,
   misc-use-anonymous-namespace,
+  misc-coroutine-hostile-raii,
   -misc-include-cleaner,
   -misc-non-private-member-variables-in-classes,
-  readability-redundant-declaration,
-  readability-redundant-member-init,
-  readability-function-size,
-  readability-identifier-naming,
-  readability-function-cognitive-complexity,
-  modernize-use-nullptr,
-  modernize-use-override,
-  modernize-use-default-member-init,
-  modernize-use-equals-delete,
-  modernize-use-noexcept,
-  modernize-avoid-bind,
-  modernize-concat-nested-namespaces,
-  bugprone-move-forwarding-reference,
-  bugprone-virtual-near-miss,
-  bugprone-throw-keyword-missing,
-  performance-trivially-destructible,
-  performance-unnecessary-copy-initialization,
-  performance-implicit-conversion-in-loop,
-  -cppcoreguidelines-pro-type-cstyle-cast,
-  -readability-convert-member-functions-to-static,
-  -bugprone-exception-escape
 
+  # No mutable global state — forces encapsulation into classes or namespaces
+  # Bad:  int g_frameCount = 0;
+  # Good: class Renderer { int m_frameCount = 0; };
+  cppcoreguidelines-avoid-non-const-global-variables,
+
+  # Virtual base classes must have virtual or protected destructor
+  # Bad:  struct Base { virtual void draw(); ~Base() {} };
+  # Good: struct Base { virtual void draw(); virtual ~Base() = default; };
+  cppcoreguidelines-virtual-class-destructor,
+
+  # All members must be initialized — reading uninitialized values is UB
+  # Bad:  struct Foo { int x; float y; };
+  # Good: struct Foo { int x = 0; float y = 0.0f; };
+  cppcoreguidelines-pro-type-member-init,
+
+  # const/ref members silently delete copy/move assignment
+  # Bad:  struct Foo { const int id; };
+  # Good: struct Foo { int id; };
+  cppcoreguidelines-avoid-const-or-ref-data-members,
+
+  # Single-argument constructors must be explicit — prevents implicit conversions
+  # Bad:  struct Path { Path(std::string s); };  Path p = "foo";
+  # Good: struct Path { explicit Path(std::string s); };
+  hicpp-explicit-conversions,
+
+  # enum must be enum class — prevents name collisions and implicit int casts
+  # Bad:  enum Color { Red, Green };
+  # Good: enum class Color { Red, Green };
+  modernize-use-scoped-enum,
+
+  # No else after return/break/continue — reduces nesting
+  # Bad:  if (error) { return; } else { doWork(); }
+  # Good: if (error) { return; } doWork();
+  readability-else-after-return,
+
+  # Replace printf/cout with C++23 std::print
+  # Bad:  printf("value: %d\n", x);
+  # Good: std::println("value: {}", x);
+  modernize-use-std-print,
+
+  # Unchecked *opt access without has_value() guard
+  # Bad:  auto val = getOptional(); int x = *val;
+  # Good: auto val = getOptional(); if (val) { int x = *val; }
+  bugprone-unchecked-optional-access,
+
+  # string_view.data() is not null-terminated — unsafe to pass to C APIs
+  # Bad:  fopen(path.data(), "r");
+  # Good: fopen(std::string{path}.c_str(), "r");
+  bugprone-suspicious-stringview-data-usage,
+
+  # Exceptions must derive from std::exception
+  # Bad:  throw "something went wrong";
+  # Good: throw std::runtime_error{"something went wrong"};
+  hicpp-exception-baseclass,
+
+  # switch must cover all enum values or have a default
+  # Bad:  switch (color) { case Red: ...; case Green: ...; }
+  # Good: switch (color) { case Red: ...; case Green: ...; default: ...; }
+  hicpp-multiway-paths-covered,
+
+  # MT-unsafe C functions: rand(), strtok(), localtime(), asctime() etc.
+  # Bad:  int r = rand();
+  # Good: std::mt19937 rng{std::random_device{}()};
+  concurrency-mt-unsafe,
+
+  # RAII types (locks) held across co_await — deadlock risk
+  # Bad:  std::lock_guard lock{m}; co_await asyncWork();
+  # Good: { std::lock_guard lock{m}; } co_await asyncWork();
+  misc-coroutine-hostile-raii,
+
+# These are errors — the build breaks if triggered
 WarningsAsErrors: >
   bugprone-use-after-move,
   bugprone-dangling-handle,
@@ -59,17 +124,23 @@ WarningsAsErrors: >
   bugprone-misplaced-widening-cast,
   bugprone-suspicious-memory-comparison,
   bugprone-narrowing-conversions,
+  bugprone-move-forwarding-reference,
+  bugprone-virtual-near-miss,
+  bugprone-exception-escape,
+  bugprone-unchecked-optional-access,
   clang-diagnostic-vexing-parse,
   performance-move-const-arg,
   performance-no-automatic-move,
   performance-no-int-to-ptr,
+  performance-trivially-destructible,
   modernize-use-nullptr,
   modernize-use-override,
-  bugprone-move-forwarding-reference,
-  bugprone-virtual-near-miss,
-  performance-trivially-destructible
+  hicpp-exception-baseclass,
+  cppcoreguidelines-avoid-const-or-ref-data-members,
 
 CheckOptions:
+
+  # Function size
   - key:   readability-function-size.StatementThreshold
     value: '50'
   - key:   readability-function-size.LineThreshold
@@ -78,20 +149,8 @@ CheckOptions:
     value: '5'
   - key:   readability-function-cognitive-complexity.Threshold
     value: '25'
-  - key:   modernize-avoid-c-arrays.AllowStringArrays
-    value: 'true'
-  - key:   modernize-use-using.IgnoreMacros
-    value: 'true'
-  - key:   modernize-make-unique.MakeSmartPtrFunction
-    value: 'std::make_unique'
-  - key:   modernize-make-unique.IgnoreMacros
-    value: 'true'
-  - key:   modernize-use-noexcept.UseNoexceptFalse
-    value: 'false'
-  - key:   readability-const-return-type.IgnoreMacros
-    value: 'true'
-  - key:   readability-qualified-auto.AddConstToQualified
-    value: 'true'
+
+  # Naming
   - key:   readability-identifier-naming.LocalVariableCase
     value: 'camelBack'
   - key:   readability-identifier-naming.ParameterCase
@@ -103,7 +162,7 @@ CheckOptions:
   - key:   readability-identifier-naming.ClassCase
     value: 'CamelCase'
   - key:   readability-identifier-naming.FunctionCase
-    value: 'CamelCase'
+    value: 'camelBack'
   - key:   readability-identifier-naming.ConstantCase
     value: 'UPPER_CASE'
   - key:   readability-identifier-naming.EnumCase
@@ -114,15 +173,26 @@ CheckOptions:
     value: 'UPPER_CASE'
   - key:   readability-identifier-naming.StaticVariableCase
     value: 'camelBack'
-  - key:   performance-unnecessary-value-param.AllowedTypes
+  - key:   readability-identifier-naming.NamespaceCase
+    value: 'lower_case'
+  - key:   readability-identifier-naming.FunctionPrefix
     value: ''
-  - key:   performance-unnecessary-copy-initialization.AllowedTypes
-    value: ''
-  - key:   bugprone-exception-escape.IgnoredExceptions
-    value: ''
-  - key:   modernize-use-std-span
-    value: 'true'
+
+  # Rule of Zero — let the compiler generate move/copy/dtor where possible
   - key:   cppcoreguidelines-special-member-functions.AllowMissingMoveFunctions
-    value: 'false'
+    value: 'true'
   - key:   cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor
+    value: 'true'
+
+  - key:   modernize-make-unique.MakeSmartPtrFunction
+    value: 'std::make_unique'
+  - key:   modernize-make-unique.IgnoreMacros
+    value: 'true'
+  - key:   modernize-use-noexcept.UseNoexceptFalse
     value: 'false'
+  - key:   readability-qualified-auto.AddConstToQualified
+    value: 'true'
+  - key:   readability-const-return-type.IgnoreMacros
+    value: 'true'
+  - key:   modernize-use-using.IgnoreMacros
+    value: 'true'

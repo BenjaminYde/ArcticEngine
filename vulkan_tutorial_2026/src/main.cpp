@@ -3,19 +3,13 @@
 #include <cstring>
 #include <exception>
 #include <iostream>
-import std;
+#include <print>
 
 // Vulkan C
 #include <vulkan/vk_platform.h>
-// #include <vulkan/vulkan.hpp>
-// #include <vulkan/vulkan_enums.hpp>
 
 // Vulkan CPP
-#if defined(__INTELLISENSE__) || !defined(USE_CPP20_MODULES)
 #include <vulkan/vulkan_raii.hpp>
-#else
-import vulkan;
-#endif
 
 // SDL3
 #include <SDL3/SDL.h>

@@ -19,13 +19,9 @@
                 "CMAKE_CXX_STANDARD": "23",
                 "CMAKE_CXX_STANDARD_REQUIRED": "ON",
                 "CMAKE_CXX_EXTENSIONS": "OFF",
-                "CMAKE_CXX_FLAGS": "-stdlib=libc++ -DUSE_CPP20_MODULES",
+                "CMAKE_CXX_FLAGS": "-stdlib=libstdc++",
                 "CMAKE_C_COMPILER_LAUNCHER": "ccache",
-                "CMAKE_CXX_COMPILER_LAUNCHER": "ccache",
-                "CMAKE_CXX_MODULE_STD": "ON",
-                "CMAKE_CXX_SCAN_FOR_MODULES": "ON",
-                "CMAKE_EXPERIMENTAL_CXX_IMPORT_STD": "451f2fe2-a8a2-47c3-bc32-94786d8fc91b",
-                "CMAKE_CXX_STDLIB_MODULES_JSON": "/usr/lib/llvm-22/lib/libc++.modules.json"
+                "CMAKE_CXX_COMPILER_LAUNCHER": "ccache"
             }
         },
         {

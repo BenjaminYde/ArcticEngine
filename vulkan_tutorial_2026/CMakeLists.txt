@@ -9,7 +9,7 @@ include(FetchContent)
 include(CMakePrintHelpers)
 
 # external dependencies
-add_subdirectory(external)
+add_subdirectory(cmake/external)
 
 # set variables
 set(TARGET_NAME ArcticEngine)
@@ -24,7 +24,6 @@ add_executable(${TARGET_NAME})
 # add packges
 FindPackage_Vulkan(${TARGET_NAME})
 FindPackage_SDL(${TARGET_NAME})
-
 
 # set sources
 target_sources(${TARGET_NAME}
