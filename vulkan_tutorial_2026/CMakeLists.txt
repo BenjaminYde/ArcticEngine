@@ -24,6 +24,7 @@ add_executable(${TARGET_NAME})
 # add packges
 FindPackage_Vulkan(${TARGET_NAME})
 FindPackage_SDL(${TARGET_NAME})
+FindPackageTarget_stblog(${TARGET_NAME})
 
 # set sources
 target_sources(${TARGET_NAME}
