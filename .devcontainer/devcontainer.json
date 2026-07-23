@@ -14,7 +14,9 @@
 				"xaver.clang-format",
 				"ms-python.python",
 				"chrisdias.vscode-opennewinstance",
-				"NarasimaPandiyan.jetbrainsmono"
+				"NarasimaPandiyan.jetbrainsmono",
+				"shader-slang.slang-language-extension",
+				"Anthropic.claude-code"
 			],
 			"settings": {
 				"terminal.integrated.defaultProfile.linux": "zsh",

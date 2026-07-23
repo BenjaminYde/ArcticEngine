@@ -31,6 +31,9 @@ project(${TARGET}
 # create target
 add_executable(${TARGET})
 
+# set defines
+target_compile_definitions(${TARGET} PRIVATE PROJECT_ROOT_FOLDER="${CMAKE_SOURCE_DIR}")
+
 # set tools
 EnableClangTidy(TRUE)
 
@@ -43,3 +46,6 @@ FindPackageTarget_stblog(${TARGET})
 target_sources(${TARGET}
         PRIVATE
         src/main.cpp)
+
+# post build commands
+compile_shaders_target(${TARGET})
